@@ -1,5 +1,5 @@
 """Pydantic models for evaluation requests."""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, field_validator, HttpUrl
 
@@ -8,7 +8,7 @@ class RunLink(BaseModel):
     """Model for a run link with optional notes."""
     url: str = Field(..., description="URL to the evaluation run")
     notes: Optional[str] = Field(None, max_length=500, description="Optional notes about this run")
-    added_at: datetime = Field(default_factory=datetime.utcnow, description="When this link was added")
+    added_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="When this link was added")
     
     @field_validator('url')
     @classmethod

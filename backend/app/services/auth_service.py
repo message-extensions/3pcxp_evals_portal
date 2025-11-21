@@ -1,7 +1,7 @@
 """Authentication service with Microsoft Entra OAuth 2.0."""
 import secrets
 from typing import Optional, Dict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from msal import ConfidentialClientApplication
 from app.models.user import User, Session
 from app.config import settings
@@ -74,11 +74,11 @@ class AuthService:
     
     def create_session(self, session_id: str, user: User) -> Session:
         """Create a new session for authenticated user."""
-        expires_at = datetime.utcnow() + timedelta(hours=settings.session_lifetime_hours)
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=settings.session_lifetime_hours)
         session = Session(
             session_id=session_id,
             user=user,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             expires_at=expires_at
         )
         
@@ -94,7 +94,7 @@ class AuthService:
             return None
         
         # Check if session expired
-        if datetime.utcnow() > session.expires_at:
+        if datetime.now(timezone.utc) > session.expires_at:
             self.delete_session(session_id)
             return None
         

@@ -2,7 +2,7 @@
 import json
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Dict
 import aiofiles
@@ -27,7 +27,7 @@ class JSONStorage:
         
         # Initialize index if it doesn't exist
         if not self.index_file.exists():
-            self._write_index({"request_ids": [], "last_updated": datetime.utcnow().isoformat()})
+            self._write_index({"request_ids": [], "last_updated": datetime.now(timezone.utc).isoformat()})
     
     def _write_index(self, data: dict) -> None:
         """Write index file atomically."""
@@ -49,14 +49,14 @@ class JSONStorage:
                 return json.load(f)
         except Exception as e:
             logger.error(f"Failed to read index: {e}")
-            return {"request_ids": [], "last_updated": datetime.utcnow().isoformat()}
+            return {"request_ids": [], "last_updated": datetime.now(timezone.utc).isoformat()}
     
     def _update_index_add(self, request_id: str) -> None:
         """Add request ID to index."""
         index = self._read_index()
         if request_id not in index["request_ids"]:
             index["request_ids"].append(request_id)
-            index["last_updated"] = datetime.utcnow().isoformat()
+            index["last_updated"] = datetime.now(timezone.utc).isoformat()
             index["count"] = len(index["request_ids"])
             self._write_index(index)
     
@@ -65,7 +65,7 @@ class JSONStorage:
         index = self._read_index()
         if request_id in index["request_ids"]:
             index["request_ids"].remove(request_id)
-            index["last_updated"] = datetime.utcnow().isoformat()
+            index["last_updated"] = datetime.now(timezone.utc).isoformat()
             index["count"] = len(index["request_ids"])
             self._write_index(index)
     
@@ -76,7 +76,7 @@ class JSONStorage:
             return
         
         # Create date-based backup directory
-        backup_date_dir = self.backups_dir / datetime.utcnow().strftime("%Y-%m-%d")
+        backup_date_dir = self.backups_dir / datetime.now(timezone.utc).strftime("%Y-%m-%d")
         backup_date_dir.mkdir(parents=True, exist_ok=True)
         
         # Copy file to backup

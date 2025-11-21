@@ -1,6 +1,6 @@
 """Request service for business logic and CRUD operations."""
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import secrets
 from app.models.request import (
     Request, RequestCreate, RequestUpdate, 
@@ -20,15 +20,15 @@ class RequestService:
     def __init__(self):
         self.storage = JSONStorage(data_dir=settings.data_dir)
     
-    def _generate_request_id(self) -> str:
+    def _generate_id(self) -> str:
         """Generate unique request ID."""
-        timestamp = int(datetime.utcnow().timestamp())
-        random_suffix = secrets.token_hex(3)
+        timestamp = int(datetime.now(timezone.utc).timestamp())
+        random_suffix = secrets.token_hex(6)
         return f"req_{timestamp}_{random_suffix}"
     
     async def create_request(self, request_data: RequestCreate, submitter: User) -> Request:
         """Create new evaluation request."""
-        request_id = self._generate_request_id()
+        request_id = self._generate_id()
         
         # Create request with auto-populated fields
         request = Request(
@@ -44,7 +44,7 @@ class RequestService:
             notes=request_data.notes,
             high_priority=request_data.high_priority,
             submitter=submitter.name,
-            submitted_at=datetime.utcnow(),
+            submitted_at=datetime.now(timezone.utc),
             status="pending",
             run_links=[]
         )
@@ -105,7 +105,7 @@ class RequestService:
         
         # Update added_at timestamp for run links
         run_links = [
-            link.model_copy(update={"added_at": datetime.utcnow()})
+            link.model_copy(update={"added_at": datetime.now(timezone.utc)})
             for link in start_data.run_links
         ]
         
@@ -113,7 +113,7 @@ class RequestService:
         updated_request = request.model_copy(update={
             "status": "in_progress",
             "executor": executor.name,
-            "started_at": datetime.utcnow(),
+            "started_at": datetime.now(timezone.utc),
             "run_links": run_links
         })
         
@@ -141,7 +141,7 @@ class RequestService:
         
         # Update added_at timestamp for new links
         new_links = [
-            link.model_copy(update={"added_at": datetime.utcnow()})
+            link.model_copy(update={"added_at": datetime.now(timezone.utc)})
             for link in links_data.run_links
         ]
         
@@ -178,7 +178,7 @@ class RequestService:
         # Update request
         updated_request = request.model_copy(update={
             "status": "completed",
-            "completed_at": datetime.utcnow()
+            "completed_at": datetime.now(timezone.utc)
         })
         
         # Save updated request

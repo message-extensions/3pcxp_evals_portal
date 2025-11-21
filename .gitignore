@@ -21,13 +21,13 @@ htmlcov/
 .env.local
 
 # Data
-data/requests/*.json
-data/backups/
-data/index.json
+backend/data/requests/*.json
+backend/data/backups/
+backend/data/index.json
 
 # Keep structure
-!data/requests/.gitkeep
-!data/backups/.gitkeep
+!backend/data/requests/.gitkeep
+!backend/data/backups/.gitkeep
 
 # IDE
 .vscode/

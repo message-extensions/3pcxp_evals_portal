@@ -1,6 +1,6 @@
 """Health check and metrics endpoints."""
 from fastapi import APIRouter
-from datetime import datetime
+from datetime import datetime, timezone
 from app.config import settings
 
 router = APIRouter(tags=["health"])
@@ -11,7 +11,7 @@ async def health_check():
     """Health check endpoint."""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "environment": settings.environment,
         "version": "2.0.0"
     }
