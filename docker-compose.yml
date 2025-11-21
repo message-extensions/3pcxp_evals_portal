@@ -3,7 +3,7 @@ version: '3.8'
 services:
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
@@ -11,18 +11,29 @@ services:
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
       - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
-      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID:-common}
       - AZURE_REDIRECT_URI=${AZURE_REDIRECT_URI:-http://localhost:8000/api/auth/callback}
       - SECRET_KEY=${SECRET_KEY}
+      - ADMIN_USERS=${ADMIN_USERS}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:8000}
       - DATA_DIR=/app/data
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENABLE_API_DOCS=${ENABLE_API_DOCS:-true}
     volumes:
-      - ./app:/app/app:ro
-      - ../data:/app/data
-      - ../frontend:/app/frontend:ro
+      # Mount data directory for persistence
+      - ./data:/app/data
+      # Mount frontend files (served by FastAPI)
+      - ./frontend:/app/frontend:ro
+      # Development: hot-reload backend code
+      - ./backend/app:/app/app:ro
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - evals-network
 

@@ -2,6 +2,13 @@
 
 Centralized evaluation request management system for the **M365 Core IDC Copilot Extensibility Platform Team**.
 
+## 📚 Documentation
+
+- **[Quick Reference](QUICK_REFERENCE.md)** - Commands, URLs, common tasks
+- **[Deployment Guide](DEPLOYMENT.md)** - Azure deployment with GitHub Actions CI/CD
+- **[Product Requirements](PRD.md)** - Detailed requirements and architecture
+- **[Testing Guide](TESTING.md)** - Test strategy and guidelines
+
 ## Overview
 
 The 3PCxP Evals Portal is a web-based application for managing evaluation requests through a three-state workflow:
@@ -13,93 +20,61 @@ Users can submit evaluation requests, team members can execute them, and all sta
 ## Project Status
 
 - ✅ **Phase 1 Complete:** Vanilla frontend with localStorage (MVP)
-- 🚧 **Phase 2 In Progress:** FastAPI backend + Microsoft Entra OAuth 2.0
+- ✅ **Phase 2 Complete:** FastAPI backend + Microsoft Entra OAuth 2.0 + Admin RBAC + 3-tier priority
 - 📋 **Phase 3 Planned:** PostgreSQL database, WebSocket updates, email notifications
 
-## Features
+## Key Features
 
-### Phase 1 (MVP)
-
-- ✅ **Request Submission Form**
-  - Multi-select hierarchical agent selection (DA/FCC)
-  - Conditional fields based on user selections
-  - Query set and experiment configuration options
-  - Form validation and character counters
-
-- ✅ **Dashboard with 3 Sections**
-  - Pending Requests
-  - In Progress Evaluations
-  - Completed Evaluations
-
-- ✅ **Workflow Management**
-  - Pick/Start evaluations
-  - Update running evaluations
-  - Mark evaluations as complete
-  - Multiple run links per evaluation (1-10)
-
-- ✅ **Data Management**
-  - In-memory state with localStorage backup
-  - Export to JSON
-  - Import from JSON
-  - Search across all fields
-  - Sort by any column
-
-### Phase 2 (Current)
-- ✅ FastAPI backend with async/await
-- ✅ Microsoft Entra OAuth 2.0 authentication
-- ✅ JSON file storage with atomic writes
-- ✅ Pydantic validation models
-- ✅ RESTful API endpoints
-- ✅ Automatic backups
-- ✅ Session management
-- ✅ CORS configuration
-- ✅ Docker containerization
-- 🚧 Frontend API integration (in progress)
-
-### Phase 3 (Planned)
-- PostgreSQL database migration
-- Real-time updates via WebSocket
-- Email notifications (Microsoft Graph API)
-- Advanced analytics dashboard
-- Role-based access control
-- Redis caching layer
-- API rate limiting
-- SLA tracking and alerts
+- 🔐 **Microsoft Entra OAuth 2.0** - Multi-tenant authentication (personal + work/school accounts)
+- 👥 **Admin RBAC** - Role-based access control with admin privileges
+- 🎯 **3-Tier Priority System** - Low/Medium/High priority with automatic sorting
+- 📊 **Server-Side Configuration** - Centralized config management via API
+- 🗂️ **Request Management** - Full CRUD with status tracking
+- 📤 **Import/Export** - JSON-based data portability (admin only)
+- 🔍 **Search & Filter** - Real-time search across all fields
+- 📱 **Responsive UI** - Modal-based workflows with rich previews
 
 ## Tech Stack
 
-### Frontend (Phase 1 - Unchanged)
-- **No frameworks:** Pure HTML5, CSS3, ES6+ JavaScript
-- **No build tools:** Direct browser execution
-- **Offline-capable:** Zero external dependencies for core functionality
+### Frontend
+- **Pure HTML5/CSS3/JavaScript** - No frameworks, zero build step
+- **Vanilla ES6+** - Modern JavaScript without dependencies
+- **Fluent Design** - Microsoft design system inspired
 
-### Backend (Phase 2)
-- **Framework:** FastAPI 0.104+ (Python 3.10+)
+### Backend
+- **Framework:** FastAPI 0.104+ (Python 3.11+)
 - **Server:** Uvicorn ASGI server
 - **Authentication:** Microsoft Entra ID OAuth 2.0 with MSAL Python
-- **Storage:** JSON files (one file per request)
-- **Validation:** Pydantic v2 models
-- **Package Manager:** uv (modern Python package manager)
-- **Testing:** pytest with fixtures
+- **Storage:** JSON file-based with atomic writes
+- **Validation:** Pydantic v2 models with type safety
+- **Package Manager:** uv (modern, fast Python package installer)
+- **Testing:** pytest with async fixtures
 - **Containerization:** Docker + docker-compose
+- **Deployment:** Azure App Service with GitHub Actions CI/CD
 
 ## Quick Start
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.11+
 - [uv](https://github.com/astral-sh/uv) package manager
 - Microsoft Azure account (for OAuth)
 - Docker (optional)
 
-### Installation
+### Local Development
 
-1. **Install uv**
+1. **Clone repository**
+   ```bash
+   git clone <repository-url>
+   cd 3pcxp_evals_portal
+   ```
+
+2. **Install uv**
    ```powershell
    # Windows PowerShell
    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
    ```
 
-2. **Setup backend**
+3. **Setup backend**
    ```bash
    cd backend
    uv venv
@@ -107,13 +82,13 @@ Users can submit evaluation requests, team members can execute them, and all sta
    uv pip install -e ".[dev]"
    ```
 
-3. **Configure environment**
+4. **Configure environment**
    ```bash
    copy .env.example .env
    # Edit .env with your Azure AD credentials
    ```
 
-4. **Run application**
+5. **Run application**
    ```bash
    # Using convenience script
    start-dev.bat
@@ -122,12 +97,47 @@ Users can submit evaluation requests, team members can execute them, and all sta
    uv run uvicorn app.main:app --reload --port 8000
    ```
 
-5. **Open browser**
+6. **Open browser**
    ```
    http://localhost:8000
    ```
 
-For detailed setup instructions, see [SETUP.md](SETUP.md).
+### Azure AD Setup
+
+#### 1. Create App Registration
+
+1. Go to [Azure Portal](https://portal.azure.com) → **Azure Active Directory** → **App registrations** → **New registration**
+2. Configure:
+   - **Name:** `3PCxP Evals Portal`
+   - **Supported account types:** `Accounts in any organizational directory and personal Microsoft accounts`
+   - **Redirect URI (Web):** `http://localhost:8000/api/auth/callback` (dev) or `https://your-app.azurewebsites.net/api/auth/callback` (prod)
+3. Click **Register**
+
+#### 2. Create Client Secret
+
+1. Go to **Certificates & secrets** → **Client secrets** → **New client secret**
+2. Copy the secret **Value** immediately (you won't see it again)
+
+#### 3. Configure API Permissions
+
+1. Go to **API permissions** → **Add a permission** → **Microsoft Graph** → **Delegated permissions**
+2. Add: `User.Read`, `email`, `openid`, `profile`
+3. Click **Grant admin consent**
+
+#### 4. Update `.env`
+
+```bash
+AZURE_CLIENT_ID=<your-client-id>
+AZURE_CLIENT_SECRET=<your-client-secret>
+AZURE_TENANT_ID=common  # Multi-tenant (personal + work/school)
+AZURE_REDIRECT_URI=http://localhost:8000/api/auth/callback
+
+# Generate secret key
+SECRET_KEY=<run: python -c "import secrets; print(secrets.token_urlsafe(32))">
+
+# Admin users (comma-separated emails)
+ADMIN_USERS=tezansahu@microsoft.com,sivinnak@microsoft.com
+```
 
 ## Project Structure
 
@@ -170,7 +180,6 @@ For detailed setup instructions, see [SETUP.md](SETUP.md).
 │   ├── pyproject.toml             # Project config (uv)
 │   ├── requirements.txt           # Generated dependencies
 │   ├── .env.example               # Environment template
-│   ├── docker-compose.yml         # Container orchestration
 │   ├── Dockerfile                 # Backend container
 │   ├── start-dev.bat              # Dev server launcher
 │   └── start-prod.bat             # Production launcher
@@ -180,6 +189,9 @@ For detailed setup instructions, see [SETUP.md](SETUP.md).
 │   ├── backups/                   # Automatic backups
 │   └── index.json                 # Fast lookup index
 │
+├── .github/workflows/             # CI/CD
+│   └── azure-deploy.yml           # Azure deployment workflow
+├── docker-compose.yml             # Container orchestration
 ├── .gitignore                     # Git ignore patterns
 ├── PRD.md                         # Product requirements
 ├── SETUP.md                       # Setup instructions
@@ -262,7 +274,7 @@ docker-compose logs -f backend
   "control_config": "Control v1",
   "treatment_config": "Treatment v2",
   "notes": "Test evaluation",
-  "high_priority": false,
+  "priority": "Medium",
   "submitter": "John Doe",
   "submitted_at": "2025-11-21T10:20:23Z",
   "status": "pending",
@@ -279,61 +291,287 @@ docker-compose logs -f backend
 {
   "oid": "azure-object-id",
   "name": "John Doe",
-  "email": "john.doe@example.com"
+  "email": "john.doe@example.com",
+  "is_admin": false
 }
 ```
 
+## Deployment
+
+### Azure App Service Deployment
+
+The project includes automated CI/CD with GitHub Actions that deploys to Azure App Service on every push to `main`.
+
+#### Prerequisites
+
+1. **Azure App Service** created with:
+   - Runtime: Python 3.11
+   - OS: Linux
+   - Plan: Basic or higher (Standard recommended)
+
+2. **GitHub Secrets** configured in repository settings:
+   ```
+   AZURE_WEBAPP_NAME=<your-app-service-name>
+   AZURE_WEBAPP_PUBLISH_PROFILE=<download-from-azure>
+   AZURE_CLIENT_ID=<your-azure-ad-client-id>
+   AZURE_CLIENT_SECRET=<your-azure-ad-client-secret>
+   AZURE_TENANT_ID=common
+   SECRET_KEY=<generate-random-32-byte-key>
+   ADMIN_USERS=<comma-separated-admin-emails>
+   ```
+
+#### Setup Steps
+
+1. **Create Azure App Service**
+   ```bash
+   az webapp create \
+     --resource-group <your-rg> \
+     --plan <your-plan> \
+     --name <your-app-name> \
+     --runtime "PYTHON:3.11"
+   ```
+
+2. **Download Publish Profile**
+   - Azure Portal → App Service → Download publish profile
+   - Copy entire XML content
+
+3. **Configure GitHub Secrets**
+   - Go to repository → Settings → Secrets and variables → Actions
+   - Add each secret listed above
+
+4. **Update Azure AD Redirect URI**
+   - Azure Portal → App Registrations → Your app → Authentication
+   - Add redirect URI: `https://<your-app-name>.azurewebsites.net/api/auth/callback`
+
+5. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Deploy to Azure"
+   git push origin main
+   ```
+
+GitHub Actions will automatically:
+- Run tests
+- Build Docker image
+- Deploy to Azure App Service
+- Run health checks
+
+**Monitor deployment:** Check Actions tab in GitHub repository
+
+#### Manual Deployment (Alternative)
+
+Using Docker:
+```bash
+# Build image
+docker build -t evals-portal ./backend
+
+# Run container
+docker run -p 8000:8000 \
+  -e AZURE_CLIENT_ID=<id> \
+  -e AZURE_CLIENT_SECRET=<secret> \
+  -e SECRET_KEY=<key> \
+  evals-portal
+```
+
+Using Azure CLI:
+```bash
+az webapp up \
+  --name <your-app-name> \
+  --runtime "PYTHON:3.11" \
+  --sku B1
+```
+
+### Environment Variables (Production)
+
+Set these in Azure App Service → Configuration → Application settings:
+
+| Variable | Value | Required |
+|----------|-------|----------|
+| `AZURE_CLIENT_ID` | Azure AD Client ID | ✅ |
+| `AZURE_CLIENT_SECRET` | Azure AD Client Secret | ✅ |
+| `AZURE_TENANT_ID` | `common` (multi-tenant) | ✅ |
+| `AZURE_REDIRECT_URI` | `https://<app>.azurewebsites.net/api/auth/callback` | ✅ |
+| `SECRET_KEY` | Random 32-byte key | ✅ |
+| `ADMIN_USERS` | `email1@example.com,email2@example.com` | ✅ |
+| `ENVIRONMENT` | `production` | ✅ |
+| `ALLOWED_ORIGINS` | `https://<app>.azurewebsites.net` | ✅ |
+| `LOG_LEVEL` | `INFO` or `WARNING` | ❌ |
+| `ENABLE_API_DOCS` | `true` or `false` | ❌ |
+
+### Health Monitoring
+
+- **Health endpoint:** `https://<app>.azurewebsites.net/health`
+- **Logs:** Azure Portal → App Service → Log stream
+- **Metrics:** Azure Portal → App Service → Metrics
+
 ## Configuration
 
-See `.env.example` for all configuration options:
+Key environment variables (see `.env.example` for all options):
 
-- **Azure AD:** Client ID, secret, tenant, redirect URI
-- **Security:** Secret key, environment
-- **CORS:** Allowed origins
-- **Storage:** Data directory, backup settings
-- **Server:** Host, port, log level
-- **Features:** API docs, metrics
+- **`AZURE_CLIENT_ID`** - Azure AD application client ID
+- **`AZURE_CLIENT_SECRET`** - Azure AD client secret
+- **`AZURE_TENANT_ID`** - Tenant ID or `common` for multi-tenant
+- **`AZURE_REDIRECT_URI`** - OAuth callback URL
+- **`SECRET_KEY`** - Application secret (generate with `secrets.token_urlsafe(32)`)
+- **`ADMIN_USERS`** - Comma-separated admin email addresses
+- **`ENVIRONMENT`** - `development` or `production`
+- **`ALLOWED_ORIGINS`** - CORS allowed origins (comma-separated)
+- **`DATA_DIR`** - Data storage directory (default: `./data`)
+- **`LOG_LEVEL`** - Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`)
 
 ## Troubleshooting
 
 ### Common Issues
 
 **"Invalid redirect URI"**
-- Ensure Azure redirect URI matches `.env` exactly
-- Format: `http://localhost:8000/api/auth/callback`
+- Ensure Azure redirect URI matches environment exactly
+- Development: `http://localhost:8000/api/auth/callback`
+- Production: `https://<your-app>.azurewebsites.net/api/auth/callback`
 
 **"Not authenticated"**
-- Check Azure AD app permissions are granted
-- Verify session cookie is being set
+- Check Azure AD app permissions are granted (admin consent)
+- Verify session cookie is being set (check browser dev tools)
 - Clear browser cookies and try again
 
 **"Request failed"**
-- Check backend is running: http://localhost:8000/health
+- Check backend is running: visit `/health` endpoint
 - Review backend logs for errors
-- Verify CORS settings in `.env`
+- Verify CORS `ALLOWED_ORIGINS` includes your frontend URL
 
-For more troubleshooting, see [SETUP.md](SETUP.md#troubleshooting).
+**"Selected user account does not exist in tenant"**
+- Set `AZURE_TENANT_ID=common` for multi-tenant support
+- Supports both personal (@gmail.com) and work/school (@microsoft.com) accounts
+
+**Deployment Issues**
+- Check GitHub Actions logs for build errors
+- Verify all secrets are set in GitHub repository settings
+- Check Azure App Service logs in Azure Portal
+
+For detailed troubleshooting, see deployment logs and application logs.
+
+## Development
+
+### Run Tests
+
+```bash
+cd backend
+uv run pytest
+
+# With coverage
+uv run pytest --cov=app --cov-report=html
+```
+
+### Run with Docker Compose
+
+```bash
+docker-compose up --build
+
+# Or detached
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+### View Logs
+
+```bash
+# Backend logs in terminal
+# Adjust log level in .env: LOG_LEVEL=DEBUG
+
+# Docker logs
+docker-compose logs -f
+
+# Azure logs
+az webapp log tail --name <your-app-name> --resource-group <your-rg>
+```
+
+### API Documentation
+
+Interactive API docs (when running):
+- **Swagger UI:** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
 
 ## Architecture
 
-See [PRD.md](PRD.md) for detailed architecture and design decisions.
+### Layered Design
 
-Key principles:
-- **Layered architecture:** API → Service → Storage
-- **Async everything:** All I/O operations use async/await
-- **Type safety:** Full type hints, Pydantic validation
-- **Fail-safe storage:** Atomic file writes prevent corruption
-- **Security first:** OAuth 2.0, HTTP-only cookies, CORS
+```
+Frontend (Vanilla JS)
+    ↓
+API Layer (FastAPI routes)
+    ↓
+Service Layer (Business logic)
+    ↓
+Storage Layer (JSON files)
+```
+
+### Key Principles
+
+- **Type Safety:** Full type hints, Pydantic validation
+- **Async Everything:** All I/O operations use async/await
+- **Fail-Safe Storage:** Atomic file writes prevent corruption
+- **Security First:** OAuth 2.0, HTTP-only cookies, CORS
+- **Separation of Concerns:** Layered architecture
+- **Testability:** Dependency injection, pytest fixtures
+
+## API Endpoints
+
+### Authentication
+- `GET /api/auth/login` - Initiate OAuth flow
+- `GET /api/auth/callback` - OAuth callback
+- `GET /api/auth/me` - Get current user
+- `POST /api/auth/logout` - Logout
+
+### Requests (CRUD)
+- `GET /api/requests` - List all requests
+- `POST /api/requests` - Create request (submitter auto-populated)
+- `GET /api/requests/{id}` - Get request
+- `PUT /api/requests/{id}` - Update request
+- `DELETE /api/requests/{id}` - Delete request (admin only)
+
+### Request Workflow
+- `POST /api/requests/{id}/start` - Start evaluation (executor auto-populated)
+- `POST /api/requests/{id}/links` - Add run links
+- `POST /api/requests/{id}/complete` - Complete evaluation
+
+### Admin Operations
+- `PUT /api/requests/{id}/priority` - Update priority (admin only)
+- `GET /api/requests/export/json` - Export all requests (admin only)
+- `POST /api/requests/import/json` - Import requests (admin only)
+
+### Configuration
+- `GET /api/config` - Get all configuration data
+- `GET /api/config/purposes` - Get available purposes
+- `GET /api/config/agents` - Get agent hierarchy
+- `GET /api/config/priority-levels` - Get priority levels
+
+### Health
+- `GET /health` - Health check
+- `GET /metrics` - Metrics (Prometheus-compatible)
+
+## Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Make changes and test (`pytest`)
+4. Commit changes (`git commit -m 'feat: add amazing feature'`)
+5. Push to branch (`git push origin feature/amazing-feature`)
+6. Open Pull Request
 
 ## Support
 
 For issues or questions:
-- Check [SETUP.md](SETUP.md) for setup help
-- Review [PRD.md](PRD.md) for requirements
-- Check API docs at http://localhost:8000/docs
+- Check `/docs` endpoint for API documentation
 - Review backend logs for errors
+- Check Azure Portal for deployment issues
+- See [PRD.md](PRD.md) for detailed requirements
 
 ---
 
-**Current Version:** 2.0.0 (Phase 2)  
-**Last Updated:** November 2024
+**Current Version:** 2.0.0 (Phase 2 Complete)  
+**Last Updated:** November 2025  
+**Deployment:** Automated via GitHub Actions

@@ -1,0 +1,207 @@
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        uv venv
+        source .venv/bin/activate
+        uv pip install -e ".[dev]"
+    
+    - name: Run tests
+      working-directory: ./backend
+      run: |
+        source .venv/bin/activate
+        pytest --cov=app --cov-report=xml --cov-report=term
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.xml
+        flags: backend
+        fail_ci_if_error: false
+  
+  deploy:
+    name: Deploy to Azure
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install uv
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        uv venv
+        source .venv/bin/activate
+        uv pip install -e .
+    
+    - name: Create deployment package
+      run: |
+        # Copy backend files
+        mkdir -p deploy
+        cp -r backend/app deploy/
+        cp backend/pyproject.toml deploy/
+        cp backend/requirements.txt deploy/
+        
+        # Copy frontend files (served by FastAPI)
+        cp -r frontend deploy/
+        
+        # Create data directories
+        mkdir -p deploy/data/requests
+        mkdir -p deploy/data/backups
+        
+        # Create startup script for Azure
+        cat > deploy/startup.sh << 'EOF'
+        #!/bin/bash
+        
+        # Install uv if not present
+        if ! command -v uv &> /dev/null; then
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            export PATH="$HOME/.cargo/bin:$PATH"
+        fi
+        
+        # Install dependencies
+        uv pip install --system -r requirements.txt
+        
+        # Start uvicorn
+        uvicorn app.main:app --host 0.0.0.0 --port 8000
+        EOF
+        chmod +x deploy/startup.sh
+    
+    - name: Deploy to Azure Web App
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ./deploy
+        startup-command: './startup.sh'
+    
+    - name: Configure App Settings
+      uses: azure/appservice-settings@v1
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+        app-settings-json: |
+          [
+            {
+              "name": "AZURE_CLIENT_ID",
+              "value": "${{ secrets.AZURE_CLIENT_ID }}",
+              "slotSetting": false
+            },
+            {
+              "name": "AZURE_CLIENT_SECRET",
+              "value": "${{ secrets.AZURE_CLIENT_SECRET }}",
+              "slotSetting": false
+            },
+            {
+              "name": "AZURE_TENANT_ID",
+              "value": "${{ secrets.AZURE_TENANT_ID }}",
+              "slotSetting": false
+            },
+            {
+              "name": "AZURE_REDIRECT_URI",
+              "value": "https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net/api/auth/callback",
+              "slotSetting": false
+            },
+            {
+              "name": "SECRET_KEY",
+              "value": "${{ secrets.SECRET_KEY }}",
+              "slotSetting": false
+            },
+            {
+              "name": "ADMIN_USERS",
+              "value": "${{ secrets.ADMIN_USERS }}",
+              "slotSetting": false
+            },
+            {
+              "name": "ENVIRONMENT",
+              "value": "production",
+              "slotSetting": false
+            },
+            {
+              "name": "ALLOWED_ORIGINS",
+              "value": "https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net",
+              "slotSetting": false
+            },
+            {
+              "name": "LOG_LEVEL",
+              "value": "INFO",
+              "slotSetting": false
+            },
+            {
+              "name": "ENABLE_API_DOCS",
+              "value": "true",
+              "slotSetting": false
+            }
+          ]
+    
+    - name: Health Check
+      run: |
+        echo "Waiting for deployment to complete..."
+        sleep 30
+        
+        # Check health endpoint
+        HEALTH_URL="https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net/health"
+        echo "Checking health at: $HEALTH_URL"
+        
+        for i in {1..10}; do
+          if curl -f -s "$HEALTH_URL" > /dev/null; then
+            echo "✅ Health check passed!"
+            exit 0
+          fi
+          echo "Attempt $i failed, retrying in 10 seconds..."
+          sleep 10
+        done
+        
+        echo "❌ Health check failed after 10 attempts"
+        exit 1
+    
+    - name: Deployment Summary
+      if: success()
+      run: |
+        echo "🚀 Deployment successful!"
+        echo "📍 Application URL: https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo "🏥 Health: https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net/health"
+        echo "📚 API Docs: https://${{ secrets.AZURE_WEBAPP_NAME }}.azurewebsites.net/docs"
