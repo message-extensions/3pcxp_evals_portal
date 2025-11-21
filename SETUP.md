@@ -19,7 +19,9 @@ This guide covers setting up the FastAPI backend with Microsoft Entra OAuth 2.0 
 2. Navigate to **Azure Active Directory** → **App registrations** → **New registration**
 3. Fill in the details:
    - **Name:** `3PCxP Evals Portal`
-   - **Supported account types:** Accounts in this organizational directory only
+   - **Supported account types:** 
+     - **Recommended:** `Accounts in any organizational directory and personal Microsoft accounts`
+     - This allows sign-in with both work/school accounts (@microsoft.com) AND personal accounts (@gmail.com)
    - **Redirect URI:** 
      - Type: Web
      - Value: `http://localhost:8000/api/auth/callback`
@@ -130,7 +132,9 @@ Edit `.env` with your values:
 # ===== Azure AD / Microsoft Entra =====
 AZURE_CLIENT_ID=<your-client-id-from-step-1.5>
 AZURE_CLIENT_SECRET=<your-client-secret-from-step-1.5>
-AZURE_TENANT_ID=<your-tenant-id-from-step-1.5>
+# For multi-tenant (personal + work/school accounts): use 'common'
+# For single-tenant (one org only): use your tenant ID from step 1.5
+AZURE_TENANT_ID=common
 AZURE_REDIRECT_URI=http://localhost:8000/api/auth/callback
 AZURE_SCOPE=User.Read email  # openid/profile added automatically by MSAL
 
@@ -278,6 +282,28 @@ docker-compose down
 - Check system clock is correct
 - Verify `SESSION_LIFETIME_HOURS` in `.env`
 - Clear browser cookies
+
+### Issue: "Selected user account does not exist in tenant"
+
+**Error:** `Selected user account does not exist in tenant 'Default Directory' and cannot access the application...`
+
+**Root Cause:** Trying to sign in with a work/school account when app is configured for single-tenant (personal account tenant only).
+
+**Solution:**
+1. **Option A - Multi-Tenant (Recommended):**
+   - Set `AZURE_TENANT_ID=common` in `.env`
+   - Restart backend server
+   - Allows both personal accounts (@gmail.com) AND work/school accounts (@microsoft.com)
+
+2. **Option B - Single-Tenant:**
+   - Use only the account type that matches your app registration tenant
+   - If app is in personal tenant → use personal account only
+   - If app is in organization tenant → use work account only
+
+3. **Option C - Guest User:**
+   - Add your work account as a guest user in your personal tenant
+   - Or vice versa
+   - Go to Azure Portal → Azure AD → Users → Invite guest user
 
 ## Development Workflow
 

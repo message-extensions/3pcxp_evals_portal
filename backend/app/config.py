@@ -15,7 +15,14 @@ class Settings(BaseSettings):
     
     @property
     def azure_authority(self) -> str:
-        """Construct Azure AD authority URL."""
+        """Construct Azure AD authority URL.
+        
+        Supports:
+        - Specific tenant ID: Single-tenant (work/school accounts from one organization)
+        - 'common': Multi-tenant (personal + work/school from any organization)
+        - 'organizations': Work/school accounts only from any organization
+        - 'consumers': Personal Microsoft accounts only
+        """
         return f"https://login.microsoftonline.com/{self.azure_tenant_id}"
     
     # Application Security
