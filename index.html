@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3PCxP Evals Portal</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/form.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/modal.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="header-title">3PCxP Evals Portal</h1>
+            <nav class="nav">
+                <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+                <button class="nav-btn" data-view="submit">Submit Request</button>
+                <button class="btn-secondary" id="exportBtn">Export Data</button>
+                <button class="btn-secondary" id="importBtn">Import Data</button>
+                <input type="file" id="importFile" accept=".json" hidden>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Dashboard View -->
+        <section id="dashboardView" class="view active">
+            <div class="section-header">
+                <input type="text" id="searchInput" placeholder="Search requests..." class="search-input">
+            </div>
+
+            <!-- Pending Requests -->
+            <div class="dashboard-section">
+                <div class="section-title-bar">
+                    <h2 class="section-title">
+                        Pending Requests
+                        <span class="count-badge" id="pendingCount">0</span>
+                    </h2>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="highPriority">Priority</th>
+                                <th data-sort="agentType">Type</th>
+                                <th data-sort="agents">Agent(s)</th>
+                                <th data-sort="purpose">Purpose</th>
+                                <th data-sort="submitter">Submitter</th>
+                                <th data-sort="submittedAt">Submitted At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingTableBody"></tbody>
+                    </table>
+                    <div class="empty-state" id="pendingEmpty">No pending requests</div>
+                </div>
+            </div>
+
+            <!-- In Progress -->
+            <div class="dashboard-section">
+                <div class="section-title-bar">
+                    <h2 class="section-title">
+                        In Progress
+                        <span class="count-badge warning" id="inProgressCount">0</span>
+                    </h2>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="highPriority">Priority</th>
+                                <th data-sort="agentType">Type</th>
+                                <th data-sort="agents">Agent(s)</th>
+                                <th data-sort="purpose">Purpose</th>
+                                <th data-sort="submitter">Submitter</th>
+                                <th data-sort="executor">Executor</th>
+                                <th>Run Links</th>
+                                <th data-sort="startedAt">Started At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inProgressTableBody"></tbody>
+                    </table>
+                    <div class="empty-state" id="inProgressEmpty">No evaluations in progress</div>
+                </div>
+            </div>
+
+            <!-- Completed -->
+            <div class="dashboard-section">
+                <div class="section-title-bar">
+                    <h2 class="section-title">
+                        Completed
+                        <span class="count-badge success" id="completedCount">0</span>
+                    </h2>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="highPriority">Priority</th>
+                                <th data-sort="agentType">Type</th>
+                                <th data-sort="agents">Agent(s)</th>
+                                <th data-sort="purpose">Purpose</th>
+                                <th data-sort="submitter">Submitter</th>
+                                <th data-sort="executor">Executor</th>
+                                <th>Run Links</th>
+                                <th data-sort="completedAt">Completed At</th>
+                                <th>Duration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completedTableBody"></tbody>
+                    </table>
+                    <div class="empty-state" id="completedEmpty">No completed evaluations</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Submit Request View -->
+        <section id="submitView" class="view">
+            <h2>Submit Evaluation Request</h2>
+            <form id="requestForm" class="request-form">
+                <!-- Purpose -->
+                <div class="form-group">
+                    <label for="purpose">Purpose <span class="required">*</span></label>
+                    <select id="purpose" name="purpose" required>
+                        <option value="">Select purpose...</option>
+                        <option value="RAI check">RAI check</option>
+                        <option value="Flight review">Flight review</option>
+                        <option value="GPT-5 migration">GPT-5 migration</option>
+                        <option value="Ad-hoc">Ad-hoc</option>
+                    </select>
+                </div>
+
+                <!-- Conditional: Purpose Reason -->
+                <div class="form-group hidden" id="purposeReasonGroup">
+                    <label for="purposeReason">Purpose Reason <span class="required">*</span></label>
+                    <textarea id="purposeReason" name="purposeReason" rows="3" 
+                              placeholder="Explain the reason for this ad-hoc evaluation..."></textarea>
+                </div>
+
+                <!-- Agent Type -->
+                <div class="form-group">
+                    <label for="agentType">Agent Type <span class="required">*</span></label>
+                    <select id="agentType" name="agentType" required>
+                        <option value="">Select agent type...</option>
+                        <option value="DA">Declarative Agents (DA)</option>
+                        <option value="FCC">Federated Copilot Connectors (FCC)</option>
+                    </select>
+                </div>
+
+                <!-- Agent Selection (hierarchical for DA) -->
+                <div class="form-group" id="agentSelectionGroup">
+                    <label>Select Agent(s) <span class="required">*</span></label>
+                    <div id="agentSelection" class="agent-selection">
+                        <div class="placeholder-text">Select agent type first...</div>
+                    </div>
+                    <div id="selectedAgents" class="selected-chips"></div>
+                </div>
+
+                <!-- Conditional: Custom Agents -->
+                <div class="form-group hidden" id="customAgentsGroup">
+                    <label for="customAgents">Custom Agents (comma-separated) <span class="required">*</span></label>
+                    <input type="text" id="customAgents" name="customAgents" 
+                           placeholder="e.g., Custom Agent 1, Custom Agent 2, Custom Agent 3">
+                    <div class="text-secondary" style="margin-top: 4px; font-size: 12px;">Enter agent names separated by commas</div>
+                </div>
+
+                <!-- Query Set -->
+                <div class="form-group">
+                    <label for="querySet">Query Set <span class="required">*</span></label>
+                    <select id="querySet" name="querySet" required>
+                        <option value="Default">Default</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+
+                <!-- Conditional: Query Set Details -->
+                <div class="form-group hidden" id="querySetDetailsGroup">
+                    <label for="querySetDetails">Query Set Details <span class="required">*</span></label>
+                    <textarea id="querySetDetails" name="querySetDetails" rows="3" 
+                              placeholder="Describe the custom query set..."></textarea>
+                </div>
+
+                <!-- Experiment Configuration -->
+                <div class="config-row">
+                    <div class="form-group">
+                        <label for="controlConfig">Control Configuration <span class="required">*</span></label>
+                        <select id="controlConfig" name="controlConfig" required>
+                            <option value="Current Prod">Current Prod</option>
+                            <option value="Others">Others</option>
+                        </select>
+                        <textarea id="controlConfigCustom" name="controlConfigCustom" rows="3" 
+                                  class="hidden" placeholder="Specify control configuration..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="treatmentConfig">Treatment Configuration <span class="required">*</span></label>
+                        <select id="treatmentConfig" name="treatmentConfig" required>
+                            <option value="Current Prod">Current Prod</option>
+                            <option value="Others">Others</option>
+                        </select>
+                        <textarea id="treatmentConfigCustom" name="treatmentConfigCustom" rows="3" 
+                                  class="hidden" placeholder="Specify treatment configuration..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="form-group">
+                    <label for="notes">Notes (Optional)</label>
+                    <textarea id="notes" name="notes" rows="4" maxlength="2000" 
+                              placeholder="Additional notes or context..."></textarea>
+                    <div class="char-counter"><span id="notesCount">0</span>/2000</div>
+                </div>
+
+                <!-- High Priority -->
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="highPriority" name="highPriority">
+                        <span>Mark as High Priority</span>
+                    </label>
+                    <div class="text-secondary" style="margin-top: 4px; font-size: 12px;">High-priority requests will be highlighted in the dashboard</div>
+                </div>
+
+                <!-- Submitter -->
+                <div class="form-group">
+                    <label for="submitter">Submitter <span class="required">*</span></label>
+                    <input type="text" id="submitter" name="submitter" required 
+                           placeholder="Your name or email">
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Submit Request</button>
+                    <button type="button" class="btn-secondary" id="resetFormBtn">Clear Form</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <!-- Execution Modal -->
+    <dialog id="executionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Start Evaluation Execution</h3>
+                <button class="modal-close" id="closeExecutionModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="requestPreview" class="request-preview"></div>
+                
+                <form id="executionForm">
+                    <div class="form-group">
+                        <label for="executorName">Executor Name <span class="required">*</span></label>
+                        <input type="text" id="executorName" required placeholder="Your name">
+                    </div>
+
+                    <div id="runLinksContainer">
+                        <div class="form-group run-link-group">
+                            <label>Run Link 1 <span class="required">*</span></label>
+                            <input type="url" class="run-link-url" required placeholder="https://...">
+                            <textarea class="run-link-notes" rows="2" placeholder="Notes (optional)"></textarea>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-secondary btn-small" id="addRunLinkBtn">+ Add Another Link</button>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-primary">Start Evaluation</button>
+                        <button type="button" class="btn-secondary" id="cancelExecutionBtn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Update Modal -->
+    <dialog id="updateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Update Evaluation</h3>
+                <button class="modal-close" id="closeUpdateModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="existingLinksPreview" class="existing-links"></div>
+                
+                <form id="updateForm">
+                    <h4>Add New Information</h4>
+                    <div id="updateLinksContainer">
+                        <div class="form-group run-link-group">
+                            <label>Run Link</label>
+                            <input type="url" class="run-link-url" placeholder="https://...">
+                            <textarea class="run-link-notes" rows="2" placeholder="Notes (optional)"></textarea>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-secondary btn-small" id="addUpdateLinkBtn">+ Add Another Link</button>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-primary">Save Updates</button>
+                        <button type="button" class="btn-secondary" id="cancelUpdateBtn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- View Details Modal -->
+    <dialog id="viewDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Request Details</h3>
+                <button class="modal-close" id="closeViewDetailsModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="viewDetailsContent" class="request-details"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" id="closeViewDetailsBtn">Close</button>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="js/utils.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/form.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/app.js"></script>
+    <script src="demo-data.js"></script>
+</body>
+</html>
