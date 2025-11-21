@@ -1,0 +1,34 @@
+{
+  "purpose": "Flight review",
+  "purpose_reason": null,
+  "agent_type": "DA",
+  "agents": [
+    "Jira Cloud",
+    "Mock MEs"
+  ],
+  "query_set": "Default",
+  "query_set_details": null,
+  "control_config": "Current Prod",
+  "treatment_config": "Current Prod",
+  "notes": null,
+  "high_priority": false,
+  "id": "req_1763671219_6c615d",
+  "submitter": "Tezan Sahu",
+  "submitted_at": "2025-11-21T02:10:19.097981",
+  "status": "completed",
+  "executor": "Tezan Sahu",
+  "started_at": "2025-11-21T02:14:03.606890",
+  "completed_at": "2025-11-21T02:20:26.109646",
+  "run_links": [
+    {
+      "url": "https://seval.microsoft.com/sample-123",
+      "notes": null,
+      "added_at": "2025-11-21T02:14:03.606890"
+    },
+    {
+      "url": "https://seval.microsoft.com/sample-456",
+      "notes": null,
+      "added_at": "2025-11-21T02:20:18.686186"
+    }
+  ]
+}

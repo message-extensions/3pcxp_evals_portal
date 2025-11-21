@@ -65,7 +65,7 @@ const dashboard = {
   createRow(request, status) {
     const priorityCell = `
       <td>
-        ${request.highPriority ? 
+        ${request.high_priority ? 
           '<span class="priority-badge high">🔥 HIGH</span>' : 
           '<span class="priority-badge normal">—</span>'}
       </td>
@@ -74,7 +74,7 @@ const dashboard = {
     const commonCells = `
       ${priorityCell}
       <td>
-        <span class="type-badge">${escapeHtml(request.agentType)}</span>
+        <span class="type-badge">${escapeHtml(request.agent_type)}</span>
       </td>
       <td class="truncate" title="${escapeHtml(request.agents.join(', '))}">
         <div class="agents-list">
@@ -95,12 +95,12 @@ const dashboard = {
 
     if (status === 'pending') {
       return `
-        <tr ${request.highPriority ? 'class="high-priority-row"' : ''}>
+        <tr ${request.high_priority ? 'class="high-priority-row"' : ''}>
           ${commonCells}
           <td>
             <div class="time-display">
-              <div class="time-relative">${getRelativeTime(request.submittedAt)}</div>
-              <div class="time-absolute">${formatAbsoluteDate(request.submittedAt)}</div>
+              <div class="time-relative">${getRelativeTime(request.submitted_at)}</div>
+              <div class="time-absolute">${formatAbsoluteDate(request.submitted_at)}</div>
             </div>
           </td>
           <td>
@@ -114,12 +114,12 @@ const dashboard = {
       `;
     } else if (status === 'in_progress') {
       return `
-        <tr ${request.highPriority ? 'class="high-priority-row"' : ''}>
+        <tr ${request.high_priority ? 'class="high-priority-row"' : ''}>
           ${commonCells}
           <td>${escapeHtml(request.executor || '')}</td>
           <td>
             <div class="run-links">
-              ${request.runLinks.slice(0, 2).map(link => `
+              ${request.run_links.slice(0, 2).map(link => `
                 <div class="run-link">
                   <span class="run-link-icon">🔗</span>
                   <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">
@@ -127,14 +127,14 @@ const dashboard = {
                   </a>
                 </div>
               `).join('')}
-              ${request.runLinks.length > 2 ? 
-                `<div class="text-secondary">+${request.runLinks.length - 2} more</div>` : ''}
+              ${request.run_links.length > 2 ? 
+                `<div class="text-secondary">+${request.run_links.length - 2} more</div>` : ''}
             </div>
           </td>
           <td>
             <div class="time-display">
-              <div class="time-relative">${getRelativeTime(request.startedAt)}</div>
-              <div class="time-absolute">${formatAbsoluteDate(request.startedAt)}</div>
+              <div class="time-relative">${getRelativeTime(request.started_at)}</div>
+              <div class="time-absolute">${formatAbsoluteDate(request.started_at)}</div>
             </div>
           </td>
           <td>
@@ -150,14 +150,14 @@ const dashboard = {
         </tr>
       `;
     } else { // completed
-      const duration = calculateDuration(request.startedAt, request.completedAt);
+      const duration = calculateDuration(request.started_at, request.completed_at);
       return `
-        <tr ${request.highPriority ? 'class="high-priority-row"' : ''}>
+        <tr ${request.high_priority ? 'class="high-priority-row"' : ''}>
           ${commonCells}
           <td>${escapeHtml(request.executor || '')}</td>
           <td>
             <div class="run-links">
-              ${request.runLinks.slice(0, 2).map(link => `
+              ${request.run_links.slice(0, 2).map(link => `
                 <div class="run-link">
                   <span class="run-link-icon">🔗</span>
                   <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">
@@ -165,14 +165,14 @@ const dashboard = {
                   </a>
                 </div>
               `).join('')}
-              ${request.runLinks.length > 2 ? 
-                `<div class="text-secondary">+${request.runLinks.length - 2} more</div>` : ''}
+              ${request.run_links.length > 2 ? 
+                `<div class="text-secondary">+${request.run_links.length - 2} more</div>` : ''}
             </div>
           </td>
           <td>
             <div class="time-display">
-              <div class="time-relative">${getRelativeTime(request.completedAt)}</div>
-              <div class="time-absolute">${formatAbsoluteDate(request.completedAt)}</div>
+              <div class="time-relative">${getRelativeTime(request.completed_at)}</div>
+              <div class="time-absolute">${formatAbsoluteDate(request.completed_at)}</div>
             </div>
           </td>
           <td>
@@ -213,11 +213,15 @@ const dashboard = {
     });
   },
 
-  handleComplete(id) {
+  async handleComplete(id) {
     if (confirm('Are you sure you want to mark this evaluation as complete?')) {
-      state.completeEvaluation(id);
-      showToast('Evaluation marked as complete');
-      this.render();
+      try {
+        await state.completeEvaluation(id);
+        this.render();
+      } catch (error) {
+        // Error already shown by state.completeEvaluation
+        console.error('Complete failed:', error);
+      }
     }
   },
 

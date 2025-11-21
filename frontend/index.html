@@ -16,9 +16,11 @@
             <nav class="nav">
                 <button class="nav-btn active" data-view="dashboard">Dashboard</button>
                 <button class="nav-btn" data-view="submit">Submit Request</button>
-                <button class="btn-secondary" id="exportBtn">Export Data</button>
-                <button class="btn-secondary" id="importBtn">Import Data</button>
-                <input type="file" id="importFile" accept=".json" hidden>
+                <div class="user-info">
+                    <span class="current-user-label">Logged in as:</span>
+                    <span class="current-user-display">Loading...</span>
+                    <button class="btn-secondary" id="logoutBtn" style="display:none;">Logout</button>
+                </div>
             </nav>
         </div>
     </header>
@@ -42,12 +44,12 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th data-sort="highPriority">Priority</th>
-                                <th data-sort="agentType">Type</th>
+                                <th data-sort="high_priority">Priority</th>
+                                <th data-sort="agent_type">Type</th>
                                 <th data-sort="agents">Agent(s)</th>
                                 <th data-sort="purpose">Purpose</th>
                                 <th data-sort="submitter">Submitter</th>
-                                <th data-sort="submittedAt">Submitted At</th>
+                                <th data-sort="submitted_at">Submitted At</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -69,14 +71,14 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th data-sort="highPriority">Priority</th>
-                                <th data-sort="agentType">Type</th>
+                                <th data-sort="high_priority">Priority</th>
+                                <th data-sort="agent_type">Type</th>
                                 <th data-sort="agents">Agent(s)</th>
                                 <th data-sort="purpose">Purpose</th>
                                 <th data-sort="submitter">Submitter</th>
                                 <th data-sort="executor">Executor</th>
                                 <th>Run Links</th>
-                                <th data-sort="startedAt">Started At</th>
+                                <th data-sort="started_at">Started At</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -98,14 +100,14 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th data-sort="highPriority">Priority</th>
-                                <th data-sort="agentType">Type</th>
+                                <th data-sort="high_priority">Priority</th>
+                                <th data-sort="agent_type">Type</th>
                                 <th data-sort="agents">Agent(s)</th>
                                 <th data-sort="purpose">Purpose</th>
                                 <th data-sort="submitter">Submitter</th>
                                 <th data-sort="executor">Executor</th>
                                 <th>Run Links</th>
-                                <th data-sort="completedAt">Completed At</th>
+                                <th data-sort="completed_at">Completed At</th>
                                 <th>Duration</th>
                                 <th>Actions</th>
                             </tr>
@@ -226,8 +228,9 @@
                 <!-- Submitter -->
                 <div class="form-group">
                     <label for="submitter">Submitter <span class="required">*</span></label>
-                    <input type="text" id="submitter" name="submitter" required 
-                           placeholder="Your name or email">
+                    <input type="text" id="submitter" name="submitter" required readonly
+                           placeholder="Auto-populated from your account" class="read-only">
+                    <div class="text-secondary" style="margin-top: 4px; font-size: 12px;">Your name is automatically populated from your authenticated account</div>
                 </div>
 
                 <!-- Form Actions -->
@@ -252,7 +255,8 @@
                 <form id="executionForm">
                     <div class="form-group">
                         <label for="executorName">Executor Name <span class="required">*</span></label>
-                        <input type="text" id="executorName" required placeholder="Your name">
+                        <input type="text" id="executorName" required readonly placeholder="Auto-populated from your account" class="read-only">
+                        <div class="text-secondary" style="margin-top: 4px; font-size: 12px;">Your name is automatically populated from your authenticated account</div>
                     </div>
 
                     <div id="runLinksContainer">
@@ -322,11 +326,11 @@
     </dialog>
 
     <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/state.js"></script>
     <script src="js/form.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/modal.js"></script>
     <script src="js/app.js"></script>
-    <script src="demo-data.js"></script>
 </body>
 </html>

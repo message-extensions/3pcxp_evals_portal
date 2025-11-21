@@ -1,14 +1,24 @@
 # 3PCxP Evals Portal
 
-A centralized evaluation request management portal for the M365 Core IDC Copilot Extensibility Platform Team.
+Centralized evaluation request management system for the **M365 Core IDC Copilot Extensibility Platform Team**.
 
 ## Overview
 
-The Evals Portal streamlines the submission, tracking, and management of evaluation requests for AI-agent capabilities across the 3PCxP team. It provides a transparent view of platform load and creates a standardized workflow for evaluation execution.
+The 3PCxP Evals Portal is a web-based application for managing evaluation requests through a three-state workflow:
+
+**Pending → In Progress → Completed**
+
+Users can submit evaluation requests, team members can execute them, and all stakeholders can track progress in real-time.
+
+## Project Status
+
+- ✅ **Phase 1 Complete:** Vanilla frontend with localStorage (MVP)
+- 🚧 **Phase 2 In Progress:** FastAPI backend + Microsoft Entra OAuth 2.0
+- 📋 **Phase 3 Planned:** PostgreSQL database, WebSocket updates, email notifications
 
 ## Features
 
-### Phase 1 (MVP) - Current Implementation
+### Phase 1 (MVP)
 
 - ✅ **Request Submission Form**
   - Multi-select hierarchical agent selection (DA/FCC)
@@ -34,204 +44,296 @@ The Evals Portal streamlines the submission, tracking, and management of evaluat
   - Search across all fields
   - Sort by any column
 
-## Getting Started
+### Phase 2 (Current)
+- ✅ FastAPI backend with async/await
+- ✅ Microsoft Entra OAuth 2.0 authentication
+- ✅ JSON file storage with atomic writes
+- ✅ Pydantic validation models
+- ✅ RESTful API endpoints
+- ✅ Automatic backups
+- ✅ Session management
+- ✅ CORS configuration
+- ✅ Docker containerization
+- 🚧 Frontend API integration (in progress)
+
+### Phase 3 (Planned)
+- PostgreSQL database migration
+- Real-time updates via WebSocket
+- Email notifications (Microsoft Graph API)
+- Advanced analytics dashboard
+- Role-based access control
+- Redis caching layer
+- API rate limiting
+- SLA tracking and alerts
+
+## Tech Stack
+
+### Frontend (Phase 1 - Unchanged)
+- **No frameworks:** Pure HTML5, CSS3, ES6+ JavaScript
+- **No build tools:** Direct browser execution
+- **Offline-capable:** Zero external dependencies for core functionality
+
+### Backend (Phase 2)
+- **Framework:** FastAPI 0.104+ (Python 3.10+)
+- **Server:** Uvicorn ASGI server
+- **Authentication:** Microsoft Entra ID OAuth 2.0 with MSAL Python
+- **Storage:** JSON files (one file per request)
+- **Validation:** Pydantic v2 models
+- **Package Manager:** uv (modern Python package manager)
+- **Testing:** pytest with fixtures
+- **Containerization:** Docker + docker-compose
+
+## Quick Start
 
 ### Prerequisites
+- Python 3.10+
+- [uv](https://github.com/astral-sh/uv) package manager
+- Microsoft Azure account (for OAuth)
+- Docker (optional)
 
-- A modern web browser (Chrome, Edge, Firefox, or Safari - latest 2 versions)
-- No build tools or dependencies required!
+### Installation
 
-### Running Locally
+1. **Install uv**
+   ```powershell
+   # Windows PowerShell
+   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+   ```
 
-**Option 1: Direct File Open**
-Simply open `index.html` in your web browser.
+2. **Setup backend**
+   ```bash
+   cd backend
+   uv venv
+   .venv\Scripts\activate  # Windows
+   uv pip install -e ".[dev]"
+   ```
 
-**Option 2: Python HTTP Server**
+3. **Configure environment**
+   ```bash
+   copy .env.example .env
+   # Edit .env with your Azure AD credentials
+   ```
+
+4. **Run application**
+   ```bash
+   # Using convenience script
+   start-dev.bat
+   
+   # Or manually
+   uv run uvicorn app.main:app --reload --port 8000
+   ```
+
+5. **Open browser**
+   ```
+   http://localhost:8000
+   ```
+
+For detailed setup instructions, see [SETUP.md](SETUP.md).
+
+## Project Structure
+
+```
+3pcxp_evals_portal/
+├── frontend/                      # Phase 1 vanilla frontend
+│   ├── index.html                 # Single-page application
+│   ├── css/                       # Stylesheets (main, form, dashboard, modal)
+│   ├── js/                        # JavaScript modules
+│   │   ├── app.js                 # Entry point
+│   │   ├── state.js               # State management
+│   │   ├── api.js                 # API client (Phase 2)
+│   │   ├── form.js                # Form handling
+│   │   ├── dashboard.js           # Dashboard rendering
+│   │   ├── modal.js               # Modal lifecycle
+│   │   └── utils.js               # Utilities
+│   └── assets/                    # Icons, images
+│
+├── backend/                       # Phase 2 FastAPI backend
+│   ├── app/
+│   │   ├── main.py                # FastAPI application
+│   │   ├── config.py              # Settings management
+│   │   ├── models/                # Pydantic models
+│   │   │   ├── request.py         # Request models
+│   │   │   └── user.py            # User models
+│   │   ├── api/                   # API route handlers
+│   │   │   ├── auth.py            # Authentication endpoints
+│   │   │   ├── requests.py        # Request CRUD endpoints
+│   │   │   └── health.py          # Health checks
+│   │   ├── services/              # Business logic
+│   │   │   ├── auth_service.py    # OAuth flow
+│   │   │   └── request_service.py # Request operations
+│   │   ├── storage/               # Data persistence
+│   │   │   └── json_storage.py    # JSON file storage
+│   │   └── utils/                 # Utilities
+│   │       └── logger.py          # Logging
+│   ├── tests/                     # Pytest test suite
+│   │   ├── conftest.py            # Shared fixtures
+│   │   └── test_api/              # API endpoint tests
+│   ├── pyproject.toml             # Project config (uv)
+│   ├── requirements.txt           # Generated dependencies
+│   ├── .env.example               # Environment template
+│   ├── docker-compose.yml         # Container orchestration
+│   ├── Dockerfile                 # Backend container
+│   ├── start-dev.bat              # Dev server launcher
+│   └── start-prod.bat             # Production launcher
+│
+├── data/                          # JSON storage (gitignored)
+│   ├── requests/                  # Request files
+│   ├── backups/                   # Automatic backups
+│   └── index.json                 # Fast lookup index
+│
+├── .gitignore                     # Git ignore patterns
+├── PRD.md                         # Product requirements
+├── SETUP.md                       # Setup instructions
+└── README.md                      # This file
+```
+
+## API Documentation
+
+Once running, access interactive API documentation:
+
+- **Swagger UI:** http://localhost:8000/docs
+- **ReDoc:** http://localhost:8000/redoc
+
+### Key Endpoints
+
+**Authentication:**
+- `GET /api/auth/login` - Initiate OAuth flow
+- `GET /api/auth/callback` - OAuth callback
+- `GET /api/auth/me` - Get current user
+- `POST /api/auth/logout` - Logout
+
+**Requests:**
+- `GET /api/requests` - List all requests
+- `POST /api/requests` - Create request
+- `GET /api/requests/{id}` - Get request
+- `PUT /api/requests/{id}` - Update request
+- `DELETE /api/requests/{id}` - Delete request
+- `POST /api/requests/{id}/start` - Start evaluation
+- `POST /api/requests/{id}/links` - Add run links
+- `POST /api/requests/{id}/complete` - Complete evaluation
+
+**Health:**
+- `GET /health` - Health check
+- `GET /metrics` - Metrics (Prometheus-compatible)
+
+## Development
+
+### Run Tests
+
 ```bash
-python -m http.server 8000
-# Navigate to http://localhost:8000
+cd backend
+uv run pytest
 ```
 
-**Option 3: Node HTTP Server**
+With coverage:
 ```bash
-npx http-server -p 8000
-# Navigate to http://localhost:8000
+uv run pytest --cov=app --cov-report=html
 ```
 
-**Option 4: VS Code Live Server**
-1. Install the "Live Server" extension
-2. Right-click `index.html` and select "Open with Live Server"
+### Run with Docker
 
-## User Guide
-
-### Submitting a Request
-
-1. Click **"Submit Request"** in the navigation
-2. Fill in required fields:
-   - **Purpose**: Select from RAI check, Flight review, GPT-5 migration, or Ad-hoc
-   - **Agent Type**: Choose DA (Declarative Agents) or FCC
-   - **Agents**: Select one or more agents from the hierarchical list
-   - **Query Set**: Default or custom
-   - **Control/Treatment Config**: Specify experiment configurations
-   - **Submitter**: Your name or email
-3. Optionally add notes (up to 2000 characters)
-4. Click **"Submit Request"**
-
-### Starting an Evaluation
-
-1. Go to **Dashboard** view
-2. In the **Pending Requests** section, click **"Pick/Start"** on a request
-3. Enter your name as the executor
-4. Add run link(s) with optional notes
-5. Click **"Start Evaluation"**
-
-The request moves to **In Progress** section.
-
-### Updating an Evaluation
-
-1. In the **In Progress** section, click **"Update"** on your evaluation
-2. Review existing links
-3. Add new run links and notes
-4. Click **"Save Updates"**
-
-### Completing an Evaluation
-
-1. In the **In Progress** section, click **"Mark Complete"**
-2. Confirm the action
-
-The request moves to **Completed** section with duration calculated.
-
-### Searching and Filtering
-
-- Use the **search box** to filter requests across all fields
-- Click **column headers** to sort (ascending/descending)
-- Search works across purpose, agents, submitter, executor, and notes
-
-### Data Management
-
-**Export Data:**
-- Click **"Export Data"** button to download all requests as JSON
-- Useful for backups or sharing with team
-
-**Import Data:**
-- Click **"Import Data"** and select a previously exported JSON file
-- Existing data will be replaced (confirmation required)
-
-## Keyboard Shortcuts
-
-- `Ctrl/Cmd + K` - Focus search box
-- `Ctrl/Cmd + N` - Navigate to Submit Request
-- `Ctrl/Cmd + D` - Navigate to Dashboard
-- `Escape` - Close open modal
-
-## Data Persistence
-
-### Storage Strategy
-
-- **Primary**: In-memory state (fast, session-based)
-- **Backup**: localStorage (survives browser refresh)
-- **Export/Import**: Manual JSON files (for data portability)
-
-### Important Notes
-
-⚠️ **Data is stored in your browser's localStorage**
-- Data persists across browser sessions
-- Data is local to your browser on this computer
-- Clearing browser data will delete all requests
-- **Always export your data regularly** as a backup
-
-⚠️ **Phase 1 Limitations**
-- No server-side database (Phase 2)
-- No multi-user synchronization
-- No authentication/authorization
-- Export/import required for data sharing
-
-## File Structure
-
-```
-evals-portal/
-├── index.html              # Main application
-├── css/
-│   ├── main.css           # Global styles, design system
-│   ├── form.css           # Form-specific styles
-│   ├── dashboard.css      # Table and dashboard layouts
-│   └── modal.css          # Modal styles
-├── js/
-│   ├── app.js             # Application initialization
-│   ├── state.js           # State management, CRUD ops
-│   ├── form.js            # Form handling, validation
-│   ├── dashboard.js       # Dashboard rendering
-│   ├── modal.js           # Modal lifecycle management
-│   └── utils.js           # Helper functions
-└── README.md              # This file
+```bash
+cd backend
+docker-compose up --build
 ```
 
-## Technical Details
+### View Logs
 
-### Tech Stack
+```bash
+# Backend logs in terminal
+# Adjust log level in .env: LOG_LEVEL=DEBUG
 
-- **HTML5** - Semantic structure, native `<dialog>` elements
-- **CSS3** - CSS Grid, Flexbox, CSS Variables
-- **JavaScript (ES6+)** - Vanilla JS, no frameworks
-- **localStorage API** - Client-side persistence
+# Docker logs
+docker-compose logs -f backend
+```
 
-### Browser Compatibility
+## Data Model
 
-- Chrome/Edge 90+
-- Firefox 88+
-- Safari 15+
+### Request Object
 
-### Design System
+```json
+{
+  "id": "req_1732194823_abc123",
+  "purpose": "Flight review",
+  "purpose_reason": null,
+  "agent_type": "DA",
+  "agents": ["GitHub Mock", "GitHub"],
+  "query_set": "Default",
+  "query_set_details": null,
+  "control_config": "Control v1",
+  "treatment_config": "Treatment v2",
+  "notes": "Test evaluation",
+  "high_priority": false,
+  "submitter": "John Doe",
+  "submitted_at": "2025-11-21T10:20:23Z",
+  "status": "pending",
+  "executor": null,
+  "started_at": null,
+  "completed_at": null,
+  "run_links": []
+}
+```
 
-**Colors:**
-- Primary: `#0078D4` (Microsoft Blue)
-- Success: `#107C10` (Green)
-- Warning: `#FF8C00` (Orange)
-- Neutral: `#605E5C` (Gray)
-- Danger: `#D13438` (Red)
+### User Object
 
-**Spacing:** 8px base unit (multiples of 8)
+```json
+{
+  "oid": "azure-object-id",
+  "name": "John Doe",
+  "email": "john.doe@example.com"
+}
+```
 
-**Typography:** Segoe UI (system fallback)
+## Configuration
+
+See `.env.example` for all configuration options:
+
+- **Azure AD:** Client ID, secret, tenant, redirect URI
+- **Security:** Secret key, environment
+- **CORS:** Allowed origins
+- **Storage:** Data directory, backup settings
+- **Server:** Host, port, log level
+- **Features:** API docs, metrics
 
 ## Troubleshooting
 
-### Issue: Data not persisting
-- **Check**: Browser localStorage is enabled
-- **Fix**: Enable cookies and site data in browser settings
+### Common Issues
 
-### Issue: Form validation errors
-- **Check**: All required fields are filled
-- **Fix**: Ensure at least one agent is selected
+**"Invalid redirect URI"**
+- Ensure Azure redirect URI matches `.env` exactly
+- Format: `http://localhost:8000/api/auth/callback`
 
-### Issue: Search not working
-- **Check**: Correct spelling in search query
-- **Note**: Search is case-insensitive and searches all fields
+**"Not authenticated"**
+- Check Azure AD app permissions are granted
+- Verify session cookie is being set
+- Clear browser cookies and try again
 
-### Issue: Modal not closing
-- **Fix**: Press `Escape` key or click outside the modal
+**"Request failed"**
+- Check backend is running: http://localhost:8000/health
+- Review backend logs for errors
+- Verify CORS settings in `.env`
 
-## Future Enhancements (Phase 2+)
+For more troubleshooting, see [SETUP.md](SETUP.md#troubleshooting).
 
-- [ ] Backend API with database (PostgreSQL/MongoDB)
-- [ ] User authentication (SSO)
-- [ ] Email/Slack notifications
-- [ ] Advanced analytics dashboard
-- [ ] Role-based permissions
-- [ ] Real-time collaboration
-- [ ] SLA tracking
+## Architecture
+
+See [PRD.md](PRD.md) for detailed architecture and design decisions.
+
+Key principles:
+- **Layered architecture:** API → Service → Storage
+- **Async everything:** All I/O operations use async/await
+- **Type safety:** Full type hints, Pydantic validation
+- **Fail-safe storage:** Atomic file writes prevent corruption
+- **Security first:** OAuth 2.0, HTTP-only cookies, CORS
 
 ## Support
 
-For questions or issues:
-- Contact: Tezan Sahu
-- Team: M365 Core IDC Copilot Extensibility Platform
-
-## License
-
-Internal tool for Microsoft 3PCxP team use only.
+For issues or questions:
+- Check [SETUP.md](SETUP.md) for setup help
+- Review [PRD.md](PRD.md) for requirements
+- Check API docs at http://localhost:8000/docs
+- Review backend logs for errors
 
 ---
 
-**Version:** 1.0 (Phase 1 MVP)  
-**Last Updated:** November 21, 2025
+**Current Version:** 2.0.0 (Phase 2)  
+**Last Updated:** November 2024

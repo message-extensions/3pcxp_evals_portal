@@ -6,6 +6,9 @@ const formHandler = {
   init() {
     const form = document.getElementById('requestForm');
     
+    // Pre-populate submitter from current user
+    this.populateSubmitter();
+    
     // Setup conditional fields
     this.setupConditionalFields();
     
@@ -24,6 +27,16 @@ const formHandler = {
         this.resetForm();
       }
     });
+  },
+
+  populateSubmitter() {
+    const submitterField = document.getElementById('submitter');
+    if (state.currentUser) {
+      submitterField.value = state.currentUser.name;
+      submitterField.readOnly = true;
+      submitterField.classList.add('read-only');
+      submitterField.title = 'Auto-populated from your account';
+    }
   },
 
   setupConditionalFields() {
@@ -241,7 +254,7 @@ const formHandler = {
     }
   },
 
-  handleSubmit(e) {
+  async handleSubmit(e) {
     e.preventDefault();
 
     // Validate at least one agent selected or custom agents provided
@@ -264,34 +277,37 @@ const formHandler = {
       agentsArray = [...agentsArray, ...customAgentsList];
     }
 
-    // Gather form data
+    // Gather form data with snake_case field names for API
     const formData = {
       purpose: document.getElementById('purpose').value,
-      purposeReason: document.getElementById('purposeReason').value || null,
-      agentType: document.getElementById('agentType').value,
+      purpose_reason: document.getElementById('purposeReason').value || null,
+      agent_type: document.getElementById('agentType').value,
       agents: agentsArray,
-      querySet: document.getElementById('querySet').value,
-      querySetDetails: document.getElementById('querySetDetails').value || null,
-      controlConfig: this.getConfigValue('control'),
-      treatmentConfig: this.getConfigValue('treatment'),
+      query_set: document.getElementById('querySet').value,
+      query_set_details: document.getElementById('querySetDetails').value || null,
+      control_config: this.getConfigValue('control'),
+      treatment_config: this.getConfigValue('treatment'),
       notes: document.getElementById('notes').value || null,
-      submitter: document.getElementById('submitter').value,
-      highPriority: document.getElementById('highPriority').checked
+      high_priority: document.getElementById('highPriority').checked
     };
 
-    // Add to state
-    const request = state.addRequest(formData);
-    
-    showToast('Request submitted successfully');
-    
-    // Reset form
-    this.resetForm();
-    
-    // Switch to dashboard
-    setTimeout(() => {
-      switchView('dashboard');
-      dashboard.render();
-    }, 500);
+    // Add to state (submitter auto-populated by backend)
+    try {
+      const request = await state.addRequest(formData);
+      
+      showToast('Request submitted successfully');
+      
+      // Reset form
+      this.resetForm();
+      
+      // Switch to dashboard
+      setTimeout(() => {
+        switchView('dashboard');
+        dashboard.render();
+      }, 500);
+    } catch (error) {
+      showToast('Failed to submit request: ' + error.message, 'error');
+    }
   },
 
   getConfigValue(type) {
@@ -308,6 +324,9 @@ const formHandler = {
     document.getElementById('requestForm').reset();
     this.selectedAgents.clear();
     this.updateSelectedChips();
+    
+    // Re-populate submitter
+    this.populateSubmitter();
     
     // Hide conditional fields
     document.getElementById('purposeReasonGroup').classList.add('hidden');

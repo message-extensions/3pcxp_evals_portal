@@ -20,16 +20,27 @@ function switchView(viewName) {
 }
 
 // Initialize application
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Initializing 3PCxP Evals Portal...');
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('Initializing 3PCxP Evals Portal (Phase 2)...');
 
-  // Initialize state
-  state.init();
+  // Show loading indicator
+  showLoadingIndicator();
 
-  // Initialize modules
-  formHandler.init();
-  dashboard.init();
-  modalHandler.init();
+  try {
+    // Initialize state (checks authentication)
+    await state.init();
+
+    // Initialize modules
+    formHandler.init();
+    dashboard.init();
+    modalHandler.init();
+  } catch (error) {
+    console.error('Application initialization failed:', error);
+    hideLoadingIndicator();
+    return; // Will redirect to login
+  }
+
+  hideLoadingIndicator();
 
   // Setup navigation
   document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -44,26 +55,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Setup export/import
-  document.getElementById('exportBtn').addEventListener('click', () => {
-    state.exportJSON();
-  });
-
-  document.getElementById('importBtn').addEventListener('click', () => {
-    document.getElementById('importFile').click();
-  });
-
-  document.getElementById('importFile').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const success = await state.importJSON(file);
-      if (success) {
-        dashboard.render();
+  // Setup logout button
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      if (confirm('Are you sure you want to logout?')) {
+        await state.logout();
       }
-      // Reset file input
-      e.target.value = '';
-    }
-  });
+    });
+  }
 
   // Initial render
   dashboard.render();
@@ -127,12 +127,22 @@ window.addEventListener('beforeunload', (e) => {
   }
 });
 
-// Service Worker for offline support (optional enhancement)
-if ('serviceWorker' in navigator) {
-  // Uncomment to enable offline support in Phase 2
-  // navigator.serviceWorker.register('/sw.js').then(reg => {
-  //   console.log('Service Worker registered:', reg);
-  // }).catch(err => {
-  //   console.log('Service Worker registration failed:', err);
-  // });
+// Loading indicator helpers
+function showLoadingIndicator() {
+  let loader = document.getElementById('appLoader');
+  if (!loader) {
+    loader = document.createElement('div');
+    loader.id = 'appLoader';
+    loader.className = 'app-loader';
+    loader.innerHTML = '<div class="spinner"></div><p>Loading...</p>';
+    document.body.appendChild(loader);
+  }
+  loader.style.display = 'flex';
+}
+
+function hideLoadingIndicator() {
+  const loader = document.getElementById('appLoader');
+  if (loader) {
+    loader.style.display = 'none';
+  }
 }

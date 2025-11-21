@@ -59,7 +59,7 @@ const modalHandler = {
       </div>
       <div class="preview-row">
         <div class="preview-label">Agent Type:</div>
-        <div class="preview-value">${escapeHtml(request.agentType)}</div>
+        <div class="preview-value">${escapeHtml(request.agent_type)}</div>
       </div>
       <div class="preview-row">
         <div class="preview-label">Agents:</div>
@@ -67,15 +67,15 @@ const modalHandler = {
       </div>
       <div class="preview-row">
         <div class="preview-label">Query Set:</div>
-        <div class="preview-value">${escapeHtml(request.querySet)}</div>
+        <div class="preview-value">${escapeHtml(request.query_set)}</div>
       </div>
       <div class="preview-row">
         <div class="preview-label">Control:</div>
-        <div class="preview-value">${escapeHtml(request.controlConfig)}</div>
+        <div class="preview-value">${escapeHtml(request.control_config)}</div>
       </div>
       <div class="preview-row">
         <div class="preview-label">Treatment:</div>
-        <div class="preview-value">${escapeHtml(request.treatmentConfig)}</div>
+        <div class="preview-value">${escapeHtml(request.treatment_config)}</div>
       </div>
       <div class="preview-row">
         <div class="preview-label">Submitter:</div>
@@ -102,14 +102,8 @@ const modalHandler = {
     modal.showModal();
   },
 
-  handleExecutionSubmit() {
-    const executor = document.getElementById('executorName').value.trim();
+  async handleExecutionSubmit() {
     const runLinks = this.collectRunLinks('runLinksContainer');
-
-    if (!executor) {
-      showToast('Please enter executor name', 'error');
-      return;
-    }
 
     if (runLinks.length === 0) {
       showToast('Please add at least one run link', 'error');
@@ -124,12 +118,16 @@ const modalHandler = {
       }
     }
 
-    // Update state
-    state.startEvaluation(this.currentRequestId, executor, runLinks);
-    
-    showToast('Evaluation started successfully');
-    document.getElementById('executionModal').close();
-    dashboard.render();
+    try {
+      // Update state (calls API - executor auto-populated by backend)
+      await state.startEvaluation(this.currentRequestId, runLinks);
+      
+      document.getElementById('executionModal').close();
+      dashboard.render();
+    } catch (error) {
+      // Error already shown by state.startEvaluation
+      console.error('Execution start failed:', error);
+    }
   },
 
   // ===== UPDATE MODAL =====
@@ -172,17 +170,17 @@ const modalHandler = {
     const modal = document.getElementById('updateModal');
     const preview = document.getElementById('existingLinksPreview');
 
-    // Show existing links
-    if (request.runLinks.length > 0) {
+    // Show existing links (use snake_case from API)
+    if (request.run_links && request.run_links.length > 0) {
       preview.innerHTML = `
         <h4>Existing Run Links</h4>
-        ${request.runLinks.map(link => `
+        ${request.run_links.map(link => `
           <div class="existing-link-item">
             <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer" class="existing-link-url">
               ${escapeHtml(link.url)}
             </a>
             ${link.notes ? `<div class="existing-link-notes">${escapeHtml(link.notes)}</div>` : ''}
-            <div class="existing-link-time">Added ${getRelativeTime(link.addedAt)}</div>
+            <div class="existing-link-time">Added ${getRelativeTime(link.added_at)}</div>
           </div>
         `).join('')}
       `;
@@ -203,7 +201,7 @@ const modalHandler = {
     modal.showModal();
   },
 
-  handleUpdateSubmit() {
+  async handleUpdateSubmit() {
     const newLinks = this.collectRunLinks('updateLinksContainer', false); // not required
 
     if (newLinks.length === 0) {
@@ -219,12 +217,16 @@ const modalHandler = {
       }
     }
 
-    // Update state
-    state.addRunLinks(this.currentRequestId, newLinks);
-    
-    showToast('Run links updated successfully');
-    document.getElementById('updateModal').close();
-    dashboard.render();
+    try {
+      // Update state (calls API)
+      await state.addRunLinks(this.currentRequestId, newLinks);
+      
+      document.getElementById('updateModal').close();
+      dashboard.render();
+    } catch (error) {
+      // Error already shown by state.addRunLinks
+      console.error('Update failed:', error);
+    }
   },
 
   // ===== SHARED HELPERS =====
@@ -321,7 +323,7 @@ const modalHandler = {
     content.innerHTML = `
       <div class="details-section">
         <h4>Request Information</h4>
-        ${request.highPriority ? '<div class="priority-badge high" style="margin-bottom: 12px;">🔥 HIGH PRIORITY</div>' : ''}
+        ${request.high_priority ? '<div class="priority-badge high" style="margin-bottom: 12px;">🔥 HIGH PRIORITY</div>' : ''}
         
         <div class="preview-row">
           <div class="preview-label">Request ID:</div>
@@ -337,17 +339,17 @@ const modalHandler = {
           </div>
         </div>
 
-        ${request.purposeReason ? `
+        ${request.purpose_reason ? `
           <div class="preview-row">
             <div class="preview-label">Purpose Reason:</div>
-            <div class="preview-value">${escapeHtml(request.purposeReason)}</div>
+            <div class="preview-value">${escapeHtml(request.purpose_reason)}</div>
           </div>
         ` : ''}
 
         <div class="preview-row">
           <div class="preview-label">Agent Type:</div>
           <div class="preview-value">
-            <span class="type-badge">${escapeHtml(request.agentType)}</span>
+            <span class="type-badge">${escapeHtml(request.agent_type)}</span>
           </div>
         </div>
 
@@ -362,24 +364,24 @@ const modalHandler = {
 
         <div class="preview-row">
           <div class="preview-label">Query Set:</div>
-          <div class="preview-value">${escapeHtml(request.querySet)}</div>
+          <div class="preview-value">${escapeHtml(request.query_set)}</div>
         </div>
 
-        ${request.querySetDetails ? `
+        ${request.query_set_details ? `
           <div class="preview-row">
             <div class="preview-label">Query Set Details:</div>
-            <div class="preview-value">${escapeHtml(request.querySetDetails)}</div>
+            <div class="preview-value">${escapeHtml(request.query_set_details)}</div>
           </div>
         ` : ''}
 
         <div class="preview-row">
           <div class="preview-label">Control Config:</div>
-          <div class="preview-value">${escapeHtml(request.controlConfig)}</div>
+          <div class="preview-value">${escapeHtml(request.control_config)}</div>
         </div>
 
         <div class="preview-row">
           <div class="preview-label">Treatment Config:</div>
-          <div class="preview-value">${escapeHtml(request.treatmentConfig)}</div>
+          <div class="preview-value">${escapeHtml(request.treatment_config)}</div>
         </div>
 
         ${request.notes ? `
@@ -401,8 +403,8 @@ const modalHandler = {
         <div class="preview-row">
           <div class="preview-label">Submitted At:</div>
           <div class="preview-value">
-            ${formatAbsoluteDate(request.submittedAt)}
-            <span class="text-secondary">(${getRelativeTime(request.submittedAt)})</span>
+            ${formatAbsoluteDate(request.submitted_at)}
+            <span class="text-secondary">(${getRelativeTime(request.submitted_at)})</span>
           </div>
         </div>
       </div>
@@ -419,8 +421,8 @@ const modalHandler = {
           <div class="preview-row">
             <div class="preview-label">Started At:</div>
             <div class="preview-value">
-              ${formatAbsoluteDate(request.startedAt)}
-              <span class="text-secondary">(${getRelativeTime(request.startedAt)})</span>
+              ${formatAbsoluteDate(request.started_at)}
+              <span class="text-secondary">(${getRelativeTime(request.started_at)})</span>
             </div>
           </div>
 
@@ -428,15 +430,15 @@ const modalHandler = {
             <div class="preview-row">
               <div class="preview-label">Completed At:</div>
               <div class="preview-value">
-                ${formatAbsoluteDate(request.completedAt)}
-                <span class="text-secondary">(${getRelativeTime(request.completedAt)})</span>
+                ${formatAbsoluteDate(request.completed_at)}
+                <span class="text-secondary">(${getRelativeTime(request.completed_at)})</span>
               </div>
             </div>
 
             <div class="preview-row">
               <div class="preview-label">Duration:</div>
               <div class="preview-value">
-                <span class="duration-badge">${calculateDuration(request.startedAt, request.completedAt)}</span>
+                <span class="duration-badge">${calculateDuration(request.started_at, request.completed_at)}</span>
               </div>
             </div>
           ` : ''}
@@ -444,13 +446,13 @@ const modalHandler = {
           <div class="preview-row" style="margin-top: 16px;">
             <div class="preview-label" style="align-self: flex-start;">Run Links:</div>
             <div class="preview-value">
-              ${request.runLinks.length > 0 ? request.runLinks.map(link => `
+              ${request.run_links && request.run_links.length > 0 ? request.run_links.map(link => `
                 <div class="existing-link-item" style="margin-bottom: 12px;">
                   <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer" class="existing-link-url">
                     ${escapeHtml(link.url)}
                   </a>
                   ${link.notes ? `<div class="existing-link-notes">${escapeHtml(link.notes)}</div>` : ''}
-                  <div class="existing-link-time">Added ${getRelativeTime(link.addedAt)}</div>
+                  <div class="existing-link-time">Added ${getRelativeTime(link.added_at)}</div>
                 </div>
               `).join('') : '<span class="text-secondary">No run links</span>'}
             </div>

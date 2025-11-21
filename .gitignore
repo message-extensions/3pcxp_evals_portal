@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# FastAPI
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+*.log
+
+# Environment
+.env
+.env.local
+
+# Data
+data/requests/*.json
+data/backups/
+data/index.json
+
+# Keep structure
+!data/requests/.gitkeep
+!data/backups/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Testing
+.tox/
+coverage.xml
+*.cover
