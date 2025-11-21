@@ -108,6 +108,9 @@ const dashboard = {
               <button class="btn-primary btn-action" data-action="start" data-id="${request.id}">
                 Start
               </button>
+              <button class="btn-secondary btn-action" data-action="view" data-id="${request.id}">
+                View Details
+              </button>
             </div>
           </td>
         </tr>
@@ -144,6 +147,9 @@ const dashboard = {
               </button>
               <button class="btn-primary btn-action" data-action="complete" data-id="${request.id}">
                 Mark Complete
+              </button>
+              <button class="btn-secondary btn-action" data-action="view" data-id="${request.id}">
+                View Details
               </button>
             </div>
           </td>
