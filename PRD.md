@@ -473,28 +473,74 @@ Two identical configuration sections: **Control** and **Treatment**
 - User documentation
 - Demo video
 
-### Phase 2: Enhanced UX (Weeks 4-5)
-**Goal:** Improved user experience and advanced features
+### Phase 2: Backend Integration & Authentication (Weeks 4-6)
+**Goal:** Production-ready backend with Microsoft Entra OAuth 2.0
+
+**Architecture:**
+- **Backend Framework:** FastAPI (Python 3.10+)
+- **Storage:** JSON files in dedicated data folder
+- **Authentication:** Microsoft Entra ID (Azure AD) OAuth 2.0
+- **API Design:** RESTful endpoints with OpenAPI documentation
+- **Deployment:** Docker containerized application
+
+**Core Features:**
+- FastAPI backend with auto-generated OpenAPI docs
+- JSON file-based storage (one file per request)
+- Microsoft SSO integration (OAuth 2.0 + PKCE flow)
+- Auto-populate submitter/executor from authenticated user
+- Session management with secure HTTP-only cookies
+- CORS configuration for frontend-backend communication
+- Structured logging and error handling
+- Health check and metrics endpoints
+
+**Authentication Flow:**
+1. User redirects to Microsoft Entra login page
+2. User authenticates with Microsoft credentials
+3. Backend receives authorization code
+4. Backend exchanges code for access token
+5. Backend validates token and extracts user info (name, email)
+6. Backend creates session and returns to frontend
+7. Frontend stores session, displays username
+8. Submitter/Executor fields pre-populated and read-only
+
+**Data Storage Strategy:**
+- Each request stored as `data/requests/{request_id}.json`
+- Index file `data/index.json` maintains list of all request IDs
+- Atomic file writes with temporary file + rename pattern
+- File locking for concurrent access safety
+- Automatic backup on every write to `data/backups/`
+
+**Technical Details:**
+- Python 3.10+ with type hints and Pydantic models
+- FastAPI with async/await for high concurrency
+- MSAL (Microsoft Authentication Library) for OAuth
+- Uvicorn ASGI server
+- Structured project layout following FastAPI best practices
+
+### Phase 3: Enhanced Features (Weeks 7-9)
+**Goal:** Advanced functionality and user experience improvements
 
 **Features:**
-- Advanced search across all fields
-- Data visualization (load metrics, trends)
-- Keyboard shortcuts
-- Bulk actions (future: bulk complete, reassign)
-- Toast notifications for actions
-- Auto-save for forms
+- Real-time updates with WebSocket connections
+- Advanced filtering with saved filter presets
+- Bulk operations (bulk assign, bulk complete)
+- Email notifications via Microsoft Graph API
+- Audit logging for compliance
+- Export to Excel with formatting
+- Data retention policies and archival
 
-### Phase 3: Production Ready (Weeks 6-8)
-**Goal:** Backend integration and enterprise features
+### Phase 4: Analytics & Scale (Weeks 10-12)
+**Goal:** Analytics, reporting, and performance optimization
 
 **Features:**
-- Database integration (PostgreSQL/MongoDB)
-- RESTful API
-- User authentication (SSO integration)
-- Role-based permissions
-- Email notifications
-- API documentation
-- Comprehensive testing suite
+- Historical analytics dashboard
+- Performance metrics by executor and agent type
+- SLA tracking and breach alerts
+- Capacity planning tools
+- Database migration (PostgreSQL for scale)
+- Caching layer (Redis) for performance
+- API rate limiting
+- Comprehensive testing suite (pytest, coverage >80%)
 
 ### Phase 4: Advanced Analytics (Weeks 9-12)
 **Goal:** Insights and optimization
@@ -509,9 +555,9 @@ Two identical configuration sections: **Control** and **Treatment**
 
 ---
 
-## Technical Architecture (MVP)
+## Technical Architecture
 
-### 8.1 Technology Stack
+### 8.1 Phase 1 (MVP) Technology Stack
 - **Frontend:** Vanilla HTML5, CSS3, JavaScript (ES6+)
 - **Styling:** Custom CSS with CSS Grid and Flexbox
 - **State Management:** JavaScript objects with in-memory storage
@@ -519,28 +565,107 @@ Two identical configuration sections: **Control** and **Treatment**
 - **Icons:** Font Awesome or SVG icons
 - **No external dependencies** for core functionality (offline-capable)
 
-### 8.2 File Structure
+### 8.2 Phase 2 Technology Stack
+
+**Backend:**
+- **Framework:** FastAPI 0.104+ (Python 3.10+)
+- **ASGI Server:** Uvicorn with auto-reload in development
+- **Authentication:** MSAL (Microsoft Authentication Library) for Python
+- **Data Storage:** JSON files with file-based locking
+- **API Documentation:** Auto-generated OpenAPI (Swagger UI)
+- **Validation:** Pydantic v2 for request/response models
+- **Configuration:** python-dotenv for environment variables
+- **Logging:** Python logging with structured JSON output
+
+**Frontend (No Changes):**
+- Same vanilla HTML/CSS/JS stack
+- API client added to `js/api.js` for backend communication
+- Session management added to `js/auth.js`
+- No framework dependencies maintained
+
+**DevOps:**
+- **Containerization:** Docker + Docker Compose
+- **Development:** Hot reload for both frontend and backend
+- **Environment Management:** .env files for local config
+- **Version Control:** Git with .gitignore for secrets
+
+### 8.3 Phase 2 Project Structure
 ```
 evals-portal/
-├── index.html              # Main application page
-├── css/
-│   ├── main.css           # Global styles
-│   ├── form.css           # Form-specific styles
-│   ├── dashboard.css      # Dashboard styles
-│   └── modal.css          # Modal styles
-├── js/
-│   ├── app.js             # Application initialization
-│   ├── state.js           # State management
-│   ├── form.js            # Form handling
-│   ├── dashboard.js       # Dashboard rendering
-│   ├── modal.js           # Modal components
-│   └── utils.js           # Helper functions
-├── assets/
-│   └── icons/             # SVG icons
-└── README.md              # Documentation
+├── frontend/                      # Phase 1 frontend (unchanged)
+│   ├── index.html
+│   ├── css/
+│   │   ├── main.css
+│   │   ├── form.css
+│   │   ├── dashboard.css
+│   │   └── modal.css
+│   ├── js/
+│   │   ├── app.js
+│   │   ├── state.js               # Modified to use API
+│   │   ├── api.js                 # NEW: API client
+│   │   ├── auth.js                # NEW: Auth handling
+│   │   ├── form.js
+│   │   ├── dashboard.js
+│   │   ├── modal.js
+│   │   └── utils.js
+│   └── assets/
+│       └── icons/
+│
+├── backend/                       # NEW: FastAPI backend
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py               # FastAPI app initialization
+│   │   ├── config.py             # Configuration & settings
+│   │   ├── models/               # Pydantic models
+│   │   │   ├── __init__.py
+│   │   │   ├── request.py        # Request model
+│   │   │   └── user.py           # User model
+│   │   ├── api/                  # API route handlers
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py           # Authentication endpoints
+│   │   │   ├── requests.py       # Request CRUD endpoints
+│   │   │   └── health.py         # Health check endpoints
+│   │   ├── services/             # Business logic layer
+│   │   │   ├── __init__.py
+│   │   │   ├── auth_service.py   # OAuth 2.0 logic
+│   │   │   └── request_service.py # Request operations
+│   │   ├── storage/              # Data persistence layer
+│   │   │   ├── __init__.py
+│   │   │   ├── json_storage.py   # JSON file operations
+│   │   │   └── file_lock.py      # File locking utilities
+│   │   ├── middleware/           # Custom middleware
+│   │   │   ├── __init__.py
+│   │   │   ├── auth_middleware.py
+│   │   │   └── logging_middleware.py
+│   │   └── utils/                # Helper utilities
+│   │       ├── __init__.py
+│   │       ├── logger.py         # Logging setup
+│   │       └── validators.py     # Custom validators
+│   ├── requirements.txt          # Python dependencies
+│   └── Dockerfile                # Backend container
+│
+├── data/                          # NEW: JSON storage
+│   ├── requests/                 # Request JSON files
+│   │   └── .gitkeep
+│   ├── backups/                  # Automatic backups
+│   │   └── .gitkeep
+│   └── index.json                # Request index
+│
+├── tests/                         # NEW: Test suite
+│   ├── __init__.py
+│   ├── conftest.py               # Pytest fixtures
+│   ├── test_api/                 # API endpoint tests
+│   ├── test_services/            # Service layer tests
+│   └── test_storage/             # Storage layer tests
+│
+├── docker-compose.yml            # Container orchestration
+├── .env.example                  # Environment template
+├── .gitignore
+├── README.md
+└── SETUP.md                      # NEW: Setup instructions
 ```
 
-### 8.3 Key JavaScript Modules
+### 8.4 Key Backend Modules (Phase 2)
 
 **State Management (state.js):**
 - Centralized application state
@@ -685,13 +810,241 @@ evals-portal/
 
 ## Appendix
 
-### A. Glossary
+### A. Microsoft Entra OAuth 2.0 Setup Guide
+
+#### A.1 Azure Portal Configuration
+
+**Step 1: Register Application in Azure Portal**
+1. Navigate to [Azure Portal](https://portal.azure.com)
+2. Go to "Azure Active Directory" → "App registrations" → "New registration"
+3. Fill in application details:
+   - **Name:** `3PCxP Evals Portal`
+   - **Supported account types:** `Accounts in this organizational directory only (Single tenant)`
+   - **Redirect URI:** Select `Web` platform
+   - **Redirect URI Value:** `http://localhost:8000/api/auth/callback` (development)
+   - For production: `https://your-domain.com/api/auth/callback`
+4. Click "Register"
+5. **Save the following values from Overview page:**
+   - Application (client) ID → `AZURE_CLIENT_ID`
+   - Directory (tenant) ID → `AZURE_TENANT_ID`
+
+**Step 2: Create Client Secret**
+1. In your app registration, go to "Certificates & secrets"
+2. Click "New client secret"
+3. Add description: `Backend API Secret`
+4. Set expiration: `24 months` (recommended)
+5. Click "Add"
+6. **Copy the secret VALUE immediately** → `AZURE_CLIENT_SECRET`
+7. ⚠️ Secret value shown only once - save it securely
+
+**Step 3: Configure API Permissions**
+1. Go to "API permissions" → "Add a permission"
+2. Select "Microsoft Graph" → "Delegated permissions"
+3. Add the following permissions:
+   - `User.Read` - Read user profile (required)
+   - `email` - Access user's email address
+   - `openid` - OpenID Connect sign-in
+   - `profile` - View user's basic profile
+4. Click "Add permissions"
+5. Click "Grant admin consent for [Your Organization]" (requires admin)
+6. Verify all permissions show "Granted for [Your Organization]"
+
+**Step 4: Configure Authentication**
+1. Go to "Authentication" in left menu
+2. Under "Platform configurations" → "Web" section:
+   - Verify redirect URI: `http://localhost:8000/api/auth/callback`
+   - Add additional redirect URI for production if needed
+3. Under "Implicit grant and hybrid flows":
+   - ✅ Check "ID tokens" (for OpenID Connect)
+4. Under "Advanced settings":
+   - Set "Allow public client flows" to **No**
+5. Click "Save"
+
+**Step 5: Configure Token Configuration (Optional)**
+1. Go to "Token configuration"
+2. Add optional claims:
+   - Click "Add optional claim"
+   - Select "ID" token type
+   - Add claims: `email`, `family_name`, `given_name`
+3. Click "Add"
+
+#### A.2 Backend Environment Configuration
+
+Create `.env` file in project root:
+
+```bash
+# Azure AD / Entra ID Configuration
+AZURE_CLIENT_ID=<your-application-client-id>
+AZURE_CLIENT_SECRET=<your-client-secret-value>
+AZURE_TENANT_ID=<your-tenant-id>
+AZURE_AUTHORITY=https://login.microsoftonline.com/<your-tenant-id>
+AZURE_REDIRECT_URI=http://localhost:8000/api/auth/callback
+AZURE_SCOPE=User.Read email openid profile
+
+# Application Configuration
+SECRET_KEY=<generate-random-secret-key-for-sessions>
+ENVIRONMENT=development
+ALLOWED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
+
+# Storage Configuration
+DATA_DIR=./data
+BACKUP_ENABLED=true
+BACKUP_RETENTION_DAYS=30
+
+# Server Configuration
+HOST=0.0.0.0
+PORT=8000
+RELOAD=true
+LOG_LEVEL=INFO
+```
+
+**Generate SECRET_KEY:**
+```python
+import secrets
+print(secrets.token_urlsafe(32))
+```
+
+#### A.3 Authentication Flow Implementation
+
+**Backend OAuth Flow (backend/app/services/auth_service.py):**
+
+1. **Initiate Login (`/api/auth/login`):**
+   - Generate PKCE code verifier and challenge
+   - Store code verifier in session
+   - Construct authorization URL with Microsoft Entra
+   - Redirect user to Microsoft login page
+
+2. **Handle Callback (`/api/auth/callback`):**
+   - Receive authorization code from Microsoft
+   - Retrieve PKCE code verifier from session
+   - Exchange authorization code for access token
+   - Validate access token and decode JWT
+   - Extract user information (name, email, oid)
+   - Create user session with HTTP-only cookie
+   - Redirect to frontend dashboard
+
+3. **Check Authentication (`/api/auth/me`):**
+   - Validate session cookie
+   - Return current user information
+   - Frontend uses this to pre-populate forms
+
+4. **Logout (`/api/auth/logout`):**
+   - Clear session cookie
+   - Optionally redirect to Microsoft logout endpoint
+
+**Frontend Integration (frontend/js/auth.js):**
+
+```javascript
+// Check if user is authenticated on page load
+async function checkAuth() {
+  const response = await fetch('/api/auth/me', {
+    credentials: 'include'  // Include session cookie
+  });
+  
+  if (response.ok) {
+    const user = await response.json();
+    return user;  // { name: "John Doe", email: "john@company.com" }
+  }
+  
+  // Not authenticated - redirect to login
+  window.location.href = '/api/auth/login';
+}
+
+// Pre-populate form fields with authenticated user
+function populateUserFields(user) {
+  const submitterField = document.getElementById('submitter');
+  submitterField.value = user.name;
+  submitterField.readOnly = true;
+  
+  const executorField = document.getElementById('executorName');
+  if (executorField) {
+    executorField.value = user.name;
+    executorField.readOnly = true;
+  }
+}
+```
+
+#### A.4 Security Best Practices
+
+1. **Never commit secrets to Git:**
+   - Add `.env` to `.gitignore`
+   - Provide `.env.example` with placeholder values
+   - Use Azure Key Vault in production
+
+2. **Session Security:**
+   - HTTP-only cookies prevent XSS attacks
+   - Secure flag in production (HTTPS only)
+   - SameSite=Lax to prevent CSRF
+   - Session expiration (24 hours recommended)
+
+3. **Token Validation:**
+   - Validate JWT signature using Microsoft public keys
+   - Check token expiration (`exp` claim)
+   - Verify audience (`aud`) matches your client ID
+   - Verify issuer (`iss`) matches Microsoft Entra
+
+4. **CORS Configuration:**
+   - Whitelist only your frontend domain
+   - Allow credentials for cookie-based auth
+   - Restrict methods to required ones (GET, POST, PUT, DELETE)
+
+#### A.5 Testing Authentication
+
+**Manual Testing Steps:**
+1. Start backend: `uvicorn app.main:app --reload --port 8000`
+2. Open browser: `http://localhost:8000`
+3. Click login → redirects to Microsoft login page
+4. Enter Microsoft credentials
+5. Consent to permissions (first time only)
+6. Redirected back to dashboard
+7. Verify username displayed in UI
+8. Open form → verify submitter field pre-populated and read-only
+9. Test logout → clears session
+10. Verify protected endpoints return 401 when not authenticated
+
+**Automated Testing (pytest):**
+```python
+# tests/test_api/test_auth.py
+def test_protected_endpoint_requires_auth(client):
+    response = client.get("/api/requests")
+    assert response.status_code == 401
+
+def test_auth_me_with_valid_session(client, authenticated_user):
+    response = client.get("/api/auth/me")
+    assert response.status_code == 200
+    assert response.json()["name"] == "Test User"
+```
+
+#### A.6 Troubleshooting
+
+**Issue:** Redirect URI mismatch error
+- **Solution:** Ensure redirect URI in Azure portal exactly matches backend configuration
+- Check for trailing slashes, http vs https, port numbers
+
+**Issue:** Insufficient permissions error
+- **Solution:** Admin must grant consent in Azure portal
+- Go to API permissions → Grant admin consent
+
+**Issue:** Token validation fails
+- **Solution:** Check system clock synchronization
+- Verify tenant ID and client ID match Azure portal
+- Ensure Microsoft public keys are accessible
+
+**Issue:** CORS errors in browser
+- **Solution:** Add frontend origin to ALLOWED_ORIGINS
+- Enable credentials in CORS configuration
+
+### B. Glossary
 - **DA:** Declarative Agent
 - **FCC:** Federated Copilot Connector
 - **ME:** Message Extension
 - **RAI:** Responsible AI
 - **MCP:** Model Context Protocol
 - **3PCxP:** M365 Core IDC Copilot Extensibility Platform Team
+- **MSAL:** Microsoft Authentication Library
+- **PKCE:** Proof Key for Code Exchange (OAuth security enhancement)
+- **JWT:** JSON Web Token
+- **OID:** Object ID (unique user identifier in Azure AD)
 
 
 
