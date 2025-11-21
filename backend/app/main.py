@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from app.config import settings
-from app.api import auth, requests, health
+from app.api import auth, requests, health, config
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -32,6 +32,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(requests.router)
 app.include_router(health.router)
+app.include_router(config.router)
 
 # Mount frontend static files
 frontend_dir = Path(__file__).parent.parent.parent / "frontend"

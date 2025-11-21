@@ -63,13 +63,19 @@ class AuthService:
         
         # Extract user info from ID token
         id_token = result.get("id_token_claims", {})
+        email = id_token.get("email") or id_token.get("preferred_username", "")
+        
+        # Check if user is admin
+        is_admin = email.lower() in settings.admin_users_list
+        
         user = User(
             oid=id_token["oid"],
             name=id_token.get("name", "Unknown User"),
-            email=id_token.get("email") or id_token.get("preferred_username", "")
+            email=email,
+            is_admin=is_admin
         )
         
-        logger.info(f"User authenticated: {user.name} ({user.email})")
+        logger.info(f"User authenticated: {user.name} ({user.email}) [Admin: {is_admin}]")
         return user
     
     def create_session(self, session_id: str, user: User) -> Session:

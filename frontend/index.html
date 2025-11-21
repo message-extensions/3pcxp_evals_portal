@@ -19,6 +19,14 @@
                 <div class="user-info">
                     <span class="current-user-label">Logged in as:</span>
                     <span class="current-user-display">Loading...</span>
+                    
+                    <!-- Admin Controls (visible only for admins) -->
+                    <div id="adminControls" style="display:none; margin-left: 16px; gap: 8px;">
+                        <button class="btn-secondary" id="exportBtn" title="Export all requests as JSON">📥 Export</button>
+                        <button class="btn-secondary" id="importBtn" title="Import requests from JSON">📤 Import</button>
+                        <input type="file" id="importFileInput" accept=".json" style="display:none">
+                    </div>
+                    
                     <button class="btn-secondary" id="logoutBtn" style="display:none;">Logout</button>
                 </div>
             </nav>
@@ -128,10 +136,7 @@
                     <label for="purpose">Purpose <span class="required">*</span></label>
                     <select id="purpose" name="purpose" required>
                         <option value="">Select purpose...</option>
-                        <option value="RAI check">RAI check</option>
-                        <option value="Flight review">Flight review</option>
-                        <option value="GPT-5 migration">GPT-5 migration</option>
-                        <option value="Ad-hoc">Ad-hoc</option>
+                        <!-- Populated from server config -->
                     </select>
                 </div>
 
@@ -173,8 +178,7 @@
                 <div class="form-group">
                     <label for="querySet">Query Set <span class="required">*</span></label>
                     <select id="querySet" name="querySet" required>
-                        <option value="Default">Default</option>
-                        <option value="Others">Others</option>
+                        <!-- Populated from server config -->
                     </select>
                 </div>
 
@@ -190,8 +194,7 @@
                     <div class="form-group">
                         <label for="controlConfig">Control Configuration <span class="required">*</span></label>
                         <select id="controlConfig" name="controlConfig" required>
-                            <option value="Current Prod">Current Prod</option>
-                            <option value="Others">Others</option>
+                            <!-- Populated from server config -->
                         </select>
                         <textarea id="controlConfigCustom" name="controlConfigCustom" rows="3" 
                                   class="hidden" placeholder="Specify control configuration..."></textarea>
@@ -200,8 +203,7 @@
                     <div class="form-group">
                         <label for="treatmentConfig">Treatment Configuration <span class="required">*</span></label>
                         <select id="treatmentConfig" name="treatmentConfig" required>
-                            <option value="Current Prod">Current Prod</option>
-                            <option value="Others">Others</option>
+                            <!-- Populated from server config -->
                         </select>
                         <textarea id="treatmentConfigCustom" name="treatmentConfigCustom" rows="3" 
                                   class="hidden" placeholder="Specify treatment configuration..."></textarea>
@@ -216,13 +218,13 @@
                     <div class="char-counter"><span id="notesCount">0</span>/2000</div>
                 </div>
 
-                <!-- High Priority -->
+                <!-- Priority -->
                 <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="highPriority" name="highPriority">
-                        <span>Mark as High Priority</span>
-                    </label>
-                    <div class="text-secondary" style="margin-top: 4px; font-size: 12px;">High-priority requests will be highlighted in the dashboard</div>
+                    <label for="priority">Priority <span class="required">*</span></label>
+                    <select id="priority" name="priority" required>
+                        <!-- Populated from server config -->
+                    </select>
+                    <div class="text-secondary" style="margin-top: 4px; font-size: 12px;">High-priority requests will be highlighted and sorted first in the dashboard</div>
                 </div>
 
                 <!-- Submitter -->
@@ -321,6 +323,35 @@
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" id="closeViewDetailsBtn">Close</button>
                 </div>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Change Priority Modal -->
+    <dialog id="changePriorityModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Change Request Priority</h3>
+                <button class="modal-close" id="closePriorityModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="priorityRequestPreview" class="request-preview"></div>
+                
+                <form id="priorityForm">
+                    <div class="form-group">
+                        <label for="newPriority">Select New Priority <span class="required">*</span></label>
+                        <select id="newPriority" name="newPriority" required>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-primary">Update Priority</button>
+                        <button type="button" class="btn-secondary" id="cancelPriorityBtn">Cancel</button>
+                    </div>
+                </form>
             </div>
         </div>
     </dialog>

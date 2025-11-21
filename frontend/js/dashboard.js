@@ -63,11 +63,10 @@ const dashboard = {
   },
 
   createRow(request, status) {
+    const priorityClass = getPriorityBadgeClass(request.priority);
     const priorityCell = `
       <td>
-        ${request.high_priority ? 
-          '<span class="priority-badge high">🔥 HIGH</span>' : 
-          '<span class="priority-badge normal">—</span>'}
+        <span class="priority-badge ${priorityClass}">${escapeHtml(request.priority)}</span>
       </td>
     `;
 
@@ -93,9 +92,11 @@ const dashboard = {
       <td>${escapeHtml(request.submitter)}</td>
     `;
 
+    const isAdmin = state.currentUser && state.currentUser.is_admin;
+
     if (status === 'pending') {
       return `
-        <tr ${request.high_priority ? 'class="high-priority-row"' : ''}>
+        <tr ${request.priority === 'High' ? 'class="high-priority-row"' : ''}>
           ${commonCells}
           <td>
             <div class="time-display">
@@ -111,13 +112,21 @@ const dashboard = {
               <button class="btn-secondary btn-action" data-action="view" data-id="${request.id}">
                 View Details
               </button>
+              ${isAdmin ? `
+                <button class="btn-warning btn-action" data-action="priority" data-id="${request.id}" title="Change priority">
+                  Change Priority
+                </button>
+                <button class="btn-danger btn-action" data-action="delete" data-id="${request.id}" title="Delete request">
+                  Delete
+                </button>
+              ` : ''}
             </div>
           </td>
         </tr>
       `;
     } else if (status === 'in_progress') {
       return `
-        <tr ${request.high_priority ? 'class="high-priority-row"' : ''}>
+        <tr ${request.priority === 'High' ? 'class="high-priority-row"' : ''}>
           ${commonCells}
           <td>${escapeHtml(request.executor || '')}</td>
           <td>
@@ -151,6 +160,14 @@ const dashboard = {
               <button class="btn-secondary btn-action" data-action="view" data-id="${request.id}">
                 View Details
               </button>
+              ${isAdmin ? `
+                <button class="btn-warning btn-action" data-action="priority" data-id="${request.id}" title="Change priority">
+                  Change Priority
+                </button>
+                <button class="btn-danger btn-action" data-action="delete" data-id="${request.id}" title="Delete request">
+                  Delete
+                </button>
+              ` : ''}
             </div>
           </td>
         </tr>
@@ -158,7 +175,7 @@ const dashboard = {
     } else { // completed
       const duration = calculateDuration(request.started_at, request.completed_at);
       return `
-        <tr ${request.high_priority ? 'class="high-priority-row"' : ''}>
+        <tr ${request.priority === 'High' ? 'class="high-priority-row"' : ''}>
           ${commonCells}
           <td>${escapeHtml(request.executor || '')}</td>
           <td>
@@ -189,6 +206,11 @@ const dashboard = {
               <button class="btn-secondary btn-action" data-action="view" data-id="${request.id}">
                 View Details
               </button>
+              ${isAdmin ? `
+                <button class="btn-danger btn-action" data-action="delete" data-id="${request.id}" title="Delete request">
+                  Delete
+                </button>
+              ` : ''}
             </div>
           </td>
         </tr>
@@ -214,6 +236,10 @@ const dashboard = {
           this.handleComplete(id);
         } else if (action === 'view') {
           modalHandler.openViewDetailsModal(id);
+        } else if (action === 'priority') {
+          this.handleChangePriority(id);
+        } else if (action === 'delete') {
+          this.handleDelete(id);
         }
       });
     });
@@ -228,6 +254,22 @@ const dashboard = {
         // Error already shown by state.completeEvaluation
         console.error('Complete failed:', error);
       }
+    }
+  },
+
+  async handleChangePriority(id) {
+    // Open the priority modal
+    modalHandler.openChangePriorityModal(id);
+  },
+
+  async handleDelete(id) {
+    if (!confirm(`Are you sure you want to delete request ${id}?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+    
+    const success = await state.deleteRequest(id);
+    if (success) {
+      this.render();
     }
   },
 

@@ -9,13 +9,15 @@ class User(BaseModel):
     oid: str = Field(..., description="Object ID from Azure AD (unique user identifier)")
     name: str = Field(..., description="Display name of the user")
     email: Optional[str] = Field(None, description="Email address of the user")
+    is_admin: bool = Field(False, description="Whether user has admin privileges")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "oid": "12345678-1234-1234-1234-123456789abc",
                 "name": "John Doe",
-                "email": "john.doe@company.com"
+                "email": "john.doe@company.com",
+                "is_admin": False
             }
         }
 

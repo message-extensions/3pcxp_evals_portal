@@ -103,6 +103,70 @@ class APIClient {
   async searchRequests(query) {
     return this.request(`/requests/search/${encodeURIComponent(query)}`);
   }
+
+  // ===== Admin-Only Endpoints =====
+  
+  async updatePriority(id, priority) {
+    return this.request(`/requests/${id}/priority?priority=${priority}`, {
+      method: 'PUT'
+    });
+  }
+
+  async exportRequests() {
+    // Use native fetch for file download
+    const response = await fetch(`${this.baseURL}/requests/export/json`, {
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+    
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'evals_requests_export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async importRequests(requestsData) {
+    return this.request('/requests/import/json', {
+      method: 'POST',
+      body: JSON.stringify(requestsData)
+    });
+  }
+
+  // ===== Config Endpoints =====
+  
+  async getConfig() {
+    return this.request('/config');
+  }
+
+  async getPurposes() {
+    return this.request('/config/purposes');
+  }
+
+  async getAgentTypes() {
+    return this.request('/config/agent-types');
+  }
+
+  async getAgents() {
+    return this.request('/config/agents');
+  }
+
+  async getQuerySets() {
+    return this.request('/config/query-sets');
+  }
+
+  async getConfigs() {
+    return this.request('/config/configs');
+  }
+
+  async getPriorityLevels() {
+    return this.request('/config/priority-levels');
+  }
 }
 
 // Global API client instance

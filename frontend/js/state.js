@@ -3,6 +3,7 @@
 const state = {
   requests: [],
   currentUser: null,
+  config: null,  // Server-side configuration
   currentSort: { field: 'submitted_at', direction: 'desc' },
   searchQuery: '',
   loading: false,
@@ -13,7 +14,11 @@ const state = {
       this.loading = true;
       // Get current user from backend
       this.currentUser = await api.getCurrentUser();
-      console.log('Authenticated as:', this.currentUser.name);
+      console.log('Authenticated as:', this.currentUser.name, 'Admin:', this.currentUser.is_admin);
+      
+      // Load configuration from server
+      this.config = await api.getConfig();
+      console.log('Loaded configuration from server');
       
       // Update UI with user info
       this.updateUserDisplay();
@@ -33,6 +38,10 @@ const state = {
     const userDisplays = document.querySelectorAll('.current-user-display');
     userDisplays.forEach(el => {
       el.textContent = this.currentUser.name;
+      // Add admin badge if user is admin
+      if (this.currentUser.is_admin) {
+        el.innerHTML = `${this.currentUser.name} <span class="admin-badge">ADMIN</span>`;
+      }
     });
     
     // Update logout button if exists
@@ -159,6 +168,49 @@ const state = {
       console.error('Failed to delete request:', error);
       showToast(error.message || 'Failed to delete request', 'error');
       return false;
+    }
+  },
+
+  // Update priority (admin only)
+  async updatePriority(id, priority) {
+    try {
+      const request = await api.updatePriority(id, priority);
+      const index = this.requests.findIndex(r => r.id === id);
+      if (index !== -1) {
+        this.requests[index] = request;
+      }
+      showToast('Priority updated successfully');
+      return request;
+    } catch (error) {
+      console.error('Failed to update priority:', error);
+      showToast(error.message || 'Failed to update priority', 'error');
+      throw error;
+    }
+  },
+
+  // Export requests (admin only)
+  async exportRequests() {
+    try {
+      await api.exportRequests();
+      showToast('Requests exported successfully');
+    } catch (error) {
+      console.error('Failed to export requests:', error);
+      showToast(error.message || 'Failed to export requests', 'error');
+      throw error;
+    }
+  },
+
+  // Import requests (admin only)
+  async importRequests(requestsData) {
+    try {
+      const result = await api.importRequests(requestsData);
+      await this.loadRequests();  // Reload to get updated list
+      showToast(`Imported ${result.imported} requests (${result.errors.length} errors)`);
+      return result;
+    } catch (error) {
+      console.error('Failed to import requests:', error);
+      showToast(error.message || 'Failed to import requests', 'error');
+      throw error;
     }
   },
 

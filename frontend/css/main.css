@@ -89,6 +89,11 @@ body {
   border-left: 1px solid var(--border);
 }
 
+#adminControls {
+  display: flex;
+  gap: var(--space-1);
+}
+
 .current-user-label {
   font-size: var(--font-size-small);
   color: var(--text-secondary);
@@ -97,6 +102,19 @@ body {
 .current-user-display {
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.admin-badge {
+  display: inline-block;
+  background-color: var(--danger);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
 }
 
 .nav-btn {
@@ -153,6 +171,40 @@ body {
 .btn-secondary:hover {
   background-color: var(--bg-hover);
   border-color: var(--neutral);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: white;
+  border-color: var(--danger);
+  height: var(--input-height);
+  padding: 0 var(--space-2);
+  border-radius: var(--button-radius);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-danger:hover {
+  background-color: #A4262C;
+}
+
+.btn-warning {
+  background-color: var(--warning);
+  color: white;
+  border-color: var(--warning);
+  height: var(--input-height);
+  padding: 0 var(--space-2);
+  border-radius: var(--button-radius);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-warning:hover {
+  background-color: #CC7000;
 }
 
 .btn-small {

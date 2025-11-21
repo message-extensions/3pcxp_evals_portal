@@ -31,7 +31,7 @@ function loadDemoData() {
       querySet: 'Default',
       querySetDetails: null,
       controlConfig: 'Current Prod',
-      treatmentConfig: 'Flight A variant 2',
+      treatmentConfig: 'Other',
       notes: 'Testing OpenAPI agents with new flight configuration',
       submitter: 'Jane Smith',
       submittedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),

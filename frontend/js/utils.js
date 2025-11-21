@@ -127,7 +127,16 @@ function isValidUrl(string) {
   }
 }
 
-// Agent hierarchy data
+// Get priority badge class
+function getPriorityBadgeClass(priority) {
+  if (priority === 'High') return 'high';
+  if (priority === 'Medium') return 'medium';
+  if (priority === 'Low') return 'low';
+  return 'medium';  // Default
+}
+
+// Agent hierarchy data - NOW LOADED FROM SERVER
+// Kept here for backward compatibility, but should use state.config instead
 const AGENT_HIERARCHY = {
   DA: {
     'Message Extensions': ['Mock MEs', 'Jira Cloud'],

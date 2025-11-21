@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import secrets
 from app.models.request import (
     Request, RequestCreate, RequestUpdate, 
-    StartEvaluation, AddRunLinks, RunLink
+    StartEvaluation, AddRunLinks, RunLink, Priority
 )
 from app.models.user import User
 from app.storage.json_storage import JSONStorage
@@ -42,7 +42,7 @@ class RequestService:
             control_config=request_data.control_config,
             treatment_config=request_data.treatment_config,
             notes=request_data.notes,
-            high_priority=request_data.high_priority,
+            priority=request_data.priority,
             submitter=submitter.name,
             submitted_at=datetime.now(timezone.utc),
             status="pending",
@@ -59,11 +59,24 @@ class RequestService:
         """Get request by ID."""
         return await self.storage.get_request(request_id)
     
-    async def list_requests(self, status: Optional[str] = None) -> List[Request]:
-        """List all requests, optionally filtered by status."""
+    async def list_requests(self, status: Optional[str] = None, sort_by_priority: bool = True) -> List[Request]:
+        """List all requests, optionally filtered by status and sorted by priority."""
         if status:
-            return await self.storage.get_requests_by_status(status)
-        return await self.storage.list_all_requests()
+            requests = await self.storage.get_requests_by_status(status)
+        else:
+            requests = await self.storage.list_all_requests()
+        
+        # Sort by priority (High -> Medium -> Low) then by submitted_at (newest first)
+        if sort_by_priority:
+            priority_order = {Priority.HIGH: 0, Priority.MEDIUM: 1, Priority.LOW: 2}
+            requests.sort(
+                key=lambda r: (
+                    priority_order.get(r.priority, 1),  # Priority first
+                    -r.submitted_at.timestamp()  # Then by time (descending)
+                )
+            )
+        
+        return requests
     
     async def update_request(
         self, 
@@ -184,6 +197,27 @@ class RequestService:
         # Save updated request
         await self.storage.save_request(updated_request)
         logger.info(f"Completed evaluation {request_id} by {user.name}")
+        
+        return updated_request
+    
+    async def update_priority(
+        self,
+        request_id: str,
+        priority: Priority,
+        user: User
+    ) -> Optional[Request]:
+        """Update request priority (admin only)."""
+        # Get existing request
+        request = await self.storage.get_request(request_id)
+        if not request:
+            return None
+        
+        # Update priority
+        updated_request = request.model_copy(update={"priority": priority})
+        
+        # Save updated request
+        await self.storage.save_request(updated_request)
+        logger.info(f"Updated priority of {request_id} to {priority.value} by {user.name}")
         
         return updated_request
     

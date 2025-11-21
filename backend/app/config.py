@@ -55,6 +55,14 @@ class Settings(BaseSettings):
     # Session Configuration
     session_lifetime_hours: int = 24
     
+    # Admin Users (comma-separated email addresses)
+    admin_users: str = "tezansahu@microsoft.com,sivinnak@microsoft.com"
+    
+    @property
+    def admin_users_list(self) -> List[str]:
+        """Parse admin users from comma-separated string."""
+        return [email.strip().lower() for email in self.admin_users.split(",") if email.strip()]
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

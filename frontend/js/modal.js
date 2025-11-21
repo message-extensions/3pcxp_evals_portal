@@ -8,6 +8,7 @@ const modalHandler = {
     this.initExecutionModal();
     this.initUpdateModal();
     this.initViewDetailsModal();
+    this.initChangePriorityModal();
   },
 
   // ===== EXECUTION MODAL =====
@@ -323,7 +324,15 @@ const modalHandler = {
     content.innerHTML = `
       <div class="details-section">
         <h4>Request Information</h4>
-        ${request.high_priority ? '<div class="priority-badge high" style="margin-bottom: 12px;">🔥 HIGH PRIORITY</div>' : ''}
+        
+        <div class="preview-row">
+          <div class="preview-label">Priority:</div>
+          <div class="preview-value">
+            <span class="priority-badge ${getPriorityBadgeClass(request.priority)}">
+              ${escapeHtml(request.priority)}
+            </span>
+          </div>
+        </div>
         
         <div class="preview-row">
           <div class="preview-label">Request ID:</div>
@@ -462,6 +471,123 @@ const modalHandler = {
     `;
 
     modal.showModal();
+  },
+
+  // ===== CHANGE PRIORITY MODAL =====
+
+  initChangePriorityModal() {
+    const modal = document.getElementById('changePriorityModal');
+    const form = document.getElementById('priorityForm');
+    const closeBtn = document.getElementById('closePriorityModal');
+    const cancelBtn = document.getElementById('cancelPriorityBtn');
+
+    // Close handlers
+    closeBtn.addEventListener('click', () => modal.close());
+    cancelBtn.addEventListener('click', () => modal.close());
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await this.handlePrioritySubmit();
+    });
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.close();
+      }
+    });
+  },
+
+  openChangePriorityModal(requestId) {
+    this.currentRequestId = requestId;
+    const request = state.getRequest(requestId);
+    if (!request) return;
+
+    const modal = document.getElementById('changePriorityModal');
+    const preview = document.getElementById('priorityRequestPreview');
+    const prioritySelect = document.getElementById('newPriority');
+
+    // Set current priority as selected
+    prioritySelect.value = request.priority;
+
+    // Populate request preview
+    const priorityClass = getPriorityBadgeClass(request.priority);
+    preview.innerHTML = `
+      <div class="preview-row">
+        <div class="preview-label">Request ID:</div>
+        <div class="preview-value"><code>${escapeHtml(request.id)}</code></div>
+      </div>
+      
+      <div class="preview-row">
+        <div class="preview-label">Current Priority:</div>
+        <div class="preview-value">
+          <span class="priority-badge ${priorityClass}">${escapeHtml(request.priority)}</span>
+        </div>
+      </div>
+
+      <div class="preview-row">
+        <div class="preview-label">Purpose:</div>
+        <div class="preview-value">
+          <span class="purpose-badge ${getPurposeBadgeClass(request.purpose)}">
+            ${escapeHtml(request.purpose)}
+          </span>
+        </div>
+      </div>
+
+      <div class="preview-row">
+        <div class="preview-label">Agent Type:</div>
+        <div class="preview-value">
+          <span class="type-badge">${escapeHtml(request.agent_type)}</span>
+        </div>
+      </div>
+
+      <div class="preview-row">
+        <div class="preview-label">Agents:</div>
+        <div class="preview-value">
+          <div class="agents-list">
+            ${request.agents.map(a => `<span class="agent-pill">${escapeHtml(a)}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-row">
+        <div class="preview-label">Submitter:</div>
+        <div class="preview-value">${escapeHtml(request.submitter)}</div>
+      </div>
+
+      <div class="preview-row">
+        <div class="preview-label">Status:</div>
+        <div class="preview-value">
+          <span class="status-badge status-${request.status}">${escapeHtml(request.status.replace('_', ' '))}</span>
+        </div>
+      </div>
+    `;
+
+    modal.showModal();
+  },
+
+  async handlePrioritySubmit() {
+    const newPriority = document.getElementById('newPriority').value;
+    const requestId = this.currentRequestId;
+
+    if (!newPriority) {
+      showToast('Please select a priority', 'error');
+      return;
+    }
+
+    try {
+      await state.updatePriority(requestId, newPriority);
+      
+      // Close modal
+      document.getElementById('changePriorityModal').close();
+      
+      // Refresh dashboard
+      dashboard.render();
+    } catch (error) {
+      // Error already shown by state
+      console.error('Priority update failed:', error);
+    }
   }
 };
 

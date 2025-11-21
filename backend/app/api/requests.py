@@ -1,9 +1,12 @@
 """Request management API endpoints."""
 from typing import List, Optional
 from fastapi import APIRouter, Request, HTTPException, status, Depends
+from fastapi.responses import JSONResponse, StreamingResponse
+import json
+from io import BytesIO
 from app.models.request import (
     Request as EvalRequest, RequestCreate, RequestUpdate,
-    StartEvaluation, AddRunLinks
+    StartEvaluation, AddRunLinks, Priority
 )
 from app.models.user import User
 from app.services.request_service import request_service
@@ -26,6 +29,16 @@ async def get_current_user(request: Request) -> User:
         )
     
     return user
+
+
+async def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Dependency to require admin privileges."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required"
+        )
+    return current_user
 
 
 @router.get("", response_model=List[EvalRequest])
@@ -96,10 +109,10 @@ async def update_request(
 @router.delete("/{request_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_request(
     request_id: str,
-    current_user: User = Depends(get_current_user)
+    admin_user: User = Depends(require_admin)
 ):
-    """Delete evaluation request."""
-    success = await request_service.delete_request(request_id, current_user)
+    """Delete evaluation request (admin only)."""
+    success = await request_service.delete_request(request_id, admin_user)
     
     if not success:
         raise HTTPException(
@@ -107,7 +120,7 @@ async def delete_request(
             detail=f"Request with id '{request_id}' not found"
         )
     
-    logger.info(f"User {current_user.name} deleted request {request_id}")
+    logger.info(f"Admin {admin_user.name} deleted request {request_id}")
 
 
 @router.post("/{request_id}/start", response_model=EvalRequest)
@@ -196,3 +209,76 @@ async def search_requests(
     requests = await request_service.search_requests(query)
     logger.info(f"User {current_user.name} searched for '{query}', found {len(requests)} results")
     return requests
+
+
+# ===== Admin-Only Endpoints =====
+
+@router.put("/{request_id}/priority", response_model=EvalRequest)
+async def update_priority(
+    request_id: str,
+    priority: Priority,
+    admin_user: User = Depends(require_admin)
+):
+    """Update request priority (admin only)."""
+    request = await request_service.update_priority(request_id, priority, admin_user)
+    
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Request with id '{request_id}' not found"
+        )
+    
+    logger.info(f"Admin {admin_user.name} updated priority of {request_id} to {priority.value}")
+    return request
+
+
+@router.get("/export/json")
+async def export_requests(
+    admin_user: User = Depends(require_admin)
+):
+    """Export all requests as JSON file (admin only)."""
+    requests = await request_service.list_requests(sort_by_priority=False)
+    
+    # Convert to dict for JSON serialization
+    requests_data = [req.model_dump(mode='json') for req in requests]
+    
+    # Create JSON file in memory
+    json_data = json.dumps(requests_data, indent=2, default=str)
+    buffer = BytesIO(json_data.encode('utf-8'))
+    
+    logger.info(f"Admin {admin_user.name} exported {len(requests)} requests")
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/json",
+        headers={"Content-Disposition": "attachment; filename=evals_requests_export.json"}
+    )
+
+
+@router.post("/import/json", status_code=status.HTTP_201_CREATED)
+async def import_requests(
+    requests_data: List[EvalRequest],
+    admin_user: User = Depends(require_admin)
+):
+    """Import requests from JSON (admin only)."""
+    imported_count = 0
+    errors = []
+    
+    for req_data in requests_data:
+        try:
+            # Save each request
+            await request_service.storage.save_request(req_data)
+            imported_count += 1
+        except Exception as e:
+            errors.append({
+                "id": req_data.id,
+                "error": str(e)
+            })
+    
+    logger.info(f"Admin {admin_user.name} imported {imported_count} requests ({len(errors)} errors)")
+    
+    return {
+        "imported": imported_count,
+        "errors": errors,
+        "total": len(requests_data)
+    }

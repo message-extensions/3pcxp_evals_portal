@@ -1,7 +1,15 @@
 """Pydantic models for evaluation requests."""
 from datetime import datetime, timezone
 from typing import List, Literal, Optional
+from enum import Enum
 from pydantic import BaseModel, Field, field_validator, HttpUrl
+
+
+class Priority(str, Enum):
+    """Priority levels for evaluation requests."""
+    LOW = "Low"
+    MEDIUM = "Medium"
+    HIGH = "High"
 
 
 class RunLink(BaseModel):
@@ -49,7 +57,7 @@ class RequestBase(BaseModel):
     control_config: str = Field(..., description="Control configuration")
     treatment_config: str = Field(..., description="Treatment configuration")
     notes: Optional[str] = Field(None, max_length=2000, description="Additional notes")
-    high_priority: bool = Field(False, description="High priority flag")
+    priority: Priority = Field(Priority.MEDIUM, description="Priority level (Low, Medium, High)")
     
     @field_validator('purpose_reason')
     @classmethod
@@ -84,7 +92,7 @@ class RequestUpdate(BaseModel):
     control_config: Optional[str] = None
     treatment_config: Optional[str] = None
     notes: Optional[str] = Field(None, max_length=2000)
-    high_priority: Optional[bool] = None
+    priority: Optional[Priority] = None
 
 
 class Request(RequestBase):
@@ -111,9 +119,9 @@ class Request(RequestBase):
                 "query_set": "Default",
                 "query_set_details": None,
                 "control_config": "Current Prod",
-                "treatment_config": "Flight A variant 2",
+                "treatment_config": "Others",
                 "notes": "Testing OpenAPI agents",
-                "high_priority": False,
+                "priority": "Medium",
                 "submitter": "John Doe",
                 "submitted_at": "2025-11-21T10:20:00Z",
                 "status": "pending",

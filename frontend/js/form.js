@@ -9,6 +9,9 @@ const formHandler = {
     // Pre-populate submitter from current user
     this.populateSubmitter();
     
+    // Populate form fields from server config
+    this.populateFormFields();
+    
     // Setup conditional fields
     this.setupConditionalFields();
     
@@ -37,6 +40,42 @@ const formHandler = {
       submitterField.classList.add('read-only');
       submitterField.title = 'Auto-populated from your account';
     }
+  },
+
+  populateFormFields() {
+    if (!state.config) {
+      console.warn('Config not loaded yet, skipping form population');
+      return;
+    }
+
+    // Populate purposes
+    const purposeSelect = document.getElementById('purpose');
+    purposeSelect.innerHTML = '<option value="">Select purpose...</option>' +
+      state.config.purposes.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+
+    // Populate query sets
+    const querySetSelect = document.getElementById('querySet');
+    querySetSelect.innerHTML = state.config.query_sets.map(q => 
+      `<option value="${escapeHtml(q)}">${escapeHtml(q)}</option>`
+    ).join('');
+
+    // Populate control configs
+    const controlSelect = document.getElementById('controlConfig');
+    controlSelect.innerHTML = state.config.configs.control.map(c =>
+      `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`
+    ).join('');
+
+    // Populate treatment configs
+    const treatmentSelect = document.getElementById('treatmentConfig');
+    treatmentSelect.innerHTML = state.config.configs.treatment.map(t =>
+      `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`
+    ).join('');
+
+    // Populate priority levels
+    const prioritySelect = document.getElementById('priority');
+    prioritySelect.innerHTML = state.config.priority_levels.map(p =>
+      `<option value="${escapeHtml(p.value)}" ${p.value === 'Medium' ? 'selected' : ''}>${escapeHtml(p.label)}</option>`
+    ).join('');
   },
 
   setupConditionalFields() {
@@ -124,18 +163,18 @@ const formHandler = {
     
     if (agentType === 'DA') {
       // Hierarchical selection for DA
-      const categories = AGENT_HIERARCHY.DA;
+      const categories = state.config ? state.config.agent_hierarchy.DA : AGENT_HIERARCHY.DA;
       let html = '';
 
       for (const [category, agents] of Object.entries(categories)) {
         html += `
           <div class="agent-category">
-            <div class="category-header">${category}</div>
+            <div class="category-header">${escapeHtml(category)}</div>
             <div class="agent-options">
               ${agents.map(agent => `
                 <label class="agent-checkbox">
-                  <input type="checkbox" value="${agent}" data-category="${category}">
-                  <span>${agent}</span>
+                  <input type="checkbox" value="${escapeHtml(agent)}" data-category="${escapeHtml(category)}">
+                  <span>${escapeHtml(agent)}</span>
                 </label>
               `).join('')}
             </div>
@@ -158,14 +197,14 @@ const formHandler = {
       container.innerHTML = html;
     } else if (agentType === 'FCC') {
       // Simple list for FCC
-      const agents = AGENT_HIERARCHY.FCC;
+      const agents = state.config ? state.config.agent_hierarchy.FCC : AGENT_HIERARCHY.FCC;
       let html = '<div class="fcc-agents">';
 
       agents.forEach(agent => {
         html += `
           <label class="agent-checkbox">
-            <input type="checkbox" value="${agent}">
-            <span>${agent}</span>
+            <input type="checkbox" value="${escapeHtml(agent)}">
+            <span>${escapeHtml(agent)}</span>
           </label>
         `;
       });
@@ -288,7 +327,7 @@ const formHandler = {
       control_config: this.getConfigValue('control'),
       treatment_config: this.getConfigValue('treatment'),
       notes: document.getElementById('notes').value || null,
-      high_priority: document.getElementById('highPriority').checked
+      priority: document.getElementById('priority').value
     };
 
     // Add to state (submitter auto-populated by backend)

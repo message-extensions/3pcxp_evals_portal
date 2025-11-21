@@ -65,6 +65,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Setup admin controls (if user is admin)
+  if (state.currentUser && state.currentUser.is_admin) {
+    const adminControls = document.getElementById('adminControls');
+    if (adminControls) {
+      adminControls.style.display = 'flex';
+      
+      // Export button
+      document.getElementById('exportBtn').addEventListener('click', async () => {
+        try {
+          await state.exportRequests();
+        } catch (error) {
+          showToast('Export failed: ' + error.message, 'error');
+        }
+      });
+      
+      // Import button
+      document.getElementById('importBtn').addEventListener('click', () => {
+        document.getElementById('importFileInput').click();
+      });
+      
+      // Import file handler
+      document.getElementById('importFileInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        try {
+          const data = await readJSONFile(file);
+          if (!Array.isArray(data)) {
+            throw new Error('Import file must contain an array of requests');
+          }
+          
+          const result = await state.importRequests(data);
+          dashboard.render();
+          
+          // Clear file input for next import
+          e.target.value = '';
+          
+          if (result.errors.length > 0) {
+            console.warn('Import errors:', result.errors);
+          }
+        } catch (error) {
+          showToast('Import failed: ' + error.message, 'error');
+          e.target.value = '';
+        }
+      });
+    }
+  }
+
   // Initial render
   dashboard.render();
   dashboard.updateSortIndicators();
