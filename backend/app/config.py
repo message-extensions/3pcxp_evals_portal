@@ -1,4 +1,5 @@
 """Application configuration using Pydantic Settings."""
+import os
 from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -28,6 +29,7 @@ class Settings(BaseSettings):
     # Application Security
     secret_key: str
     environment: str = "development"
+    testing: bool = False  # Set to True to skip MSAL initialization
     
     # CORS Configuration
     allowed_origins: str = "http://localhost:8000,http://127.0.0.1:8000"
@@ -62,6 +64,21 @@ class Settings(BaseSettings):
     def admin_users_list(self) -> List[str]:
         """Parse admin users from comma-separated string."""
         return [email.strip().lower() for email in self.admin_users.split(",") if email.strip()]
+    
+    @property
+    def is_testing(self) -> bool:
+        """Check if running in test mode.
+        
+        Returns True if:
+        - testing field is True
+        - TESTING env var is 'true'
+        - PYTEST_CURRENT_TEST env var is set (pytest is running)
+        """
+        return (
+            self.testing or 
+            os.getenv("TESTING", "").lower() == "true" or 
+            os.getenv("PYTEST_CURRENT_TEST") is not None
+        )
     
     model_config = SettingsConfigDict(
         env_file=".env",

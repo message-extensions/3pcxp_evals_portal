@@ -43,6 +43,8 @@ jobs:
     - name: Run tests
       working-directory: ./backend
       env:
+        # Enable test mode to skip MSAL initialization
+        TESTING: "true"
         # Override with test values
         AZURE_CLIENT_ID: ${{ env.AZURE_CLIENT_ID }}
         AZURE_CLIENT_SECRET: ${{ env.AZURE_CLIENT_SECRET }}

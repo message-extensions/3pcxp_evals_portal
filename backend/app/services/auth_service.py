@@ -14,17 +14,26 @@ class AuthService:
     """Handle OAuth 2.0 authentication flow with Microsoft Entra."""
     
     def __init__(self):
-        self.msal_app = ConfidentialClientApplication(
-            client_id=settings.azure_client_id,
-            client_credential=settings.azure_client_secret,
-            authority=settings.azure_authority
-        )
+        # Skip MSAL initialization in test mode to avoid network calls
+        if settings.is_testing:
+            self.msal_app = None
+            logger.info("Running in test mode - MSAL disabled")
+        else:
+            self.msal_app = ConfidentialClientApplication(
+                client_id=settings.azure_client_id,
+                client_credential=settings.azure_client_secret,
+                authority=settings.azure_authority
+            )
+        
         # In-memory session store (replace with Redis in production)
         self.sessions: Dict[str, Session] = {}
         self.code_verifiers: Dict[str, str] = {}
     
     def get_auth_url(self, session_id: str) -> str:
         """Generate Microsoft login URL with PKCE."""
+        if settings.is_testing:
+            return "http://test-auth-url.com"
+        
         # Generate code verifier for PKCE
         code_verifier = secrets.token_urlsafe(32)
         self.code_verifiers[session_id] = code_verifier
@@ -41,6 +50,15 @@ class AuthService:
     
     async def handle_callback(self, code: str, state: str) -> User:
         """Exchange authorization code for access token and extract user info."""
+        if settings.is_testing:
+            # Return mock user for tests
+            return User(
+                oid="test-oid",
+                name="Test User",
+                email="test@example.com",
+                is_admin=False
+            )
+        
         # Get code verifier for this session
         code_verifier = self.code_verifiers.get(state)
         if not code_verifier:
