@@ -14,20 +14,48 @@ def client():
 
 @pytest.fixture
 def mock_user():
-    """Mock authenticated user."""
+    """Mock authenticated user (non-admin)."""
     return User(
         oid="test-oid-12345",
         name="Test User",
-        email="test.user@example.com"
+        email="test.user@example.com",
+        is_admin=False
+    )
+
+
+@pytest.fixture
+def mock_admin_user():
+    """Mock authenticated admin user."""
+    return User(
+        oid="admin-oid-12345",
+        name="Admin User",
+        email="admin@example.com",
+        is_admin=True
     )
 
 
 @pytest.fixture
 def authenticated_client(client, mock_user):
-    """Test client with authenticated session."""
+    """Test client with authenticated session (non-admin)."""
     # Create session
     session_id = "test-session-12345"
     auth_service.create_session(session_id, mock_user)
+    
+    # Set cookie in client
+    client.cookies.set("session_id", session_id)
+    
+    yield client
+    
+    # Cleanup
+    auth_service.delete_session(session_id)
+
+
+@pytest.fixture
+def admin_client(client, mock_admin_user):
+    """Test client with authenticated admin session."""
+    # Create session
+    session_id = "admin-session-12345"
+    auth_service.create_session(session_id, mock_admin_user)
     
     # Set cookie in client
     client.cookies.set("session_id", session_id)
@@ -49,5 +77,5 @@ def sample_request_data():
         "control_config": "Control v1",
         "treatment_config": "Treatment v2",
         "notes": "Test evaluation request",
-        "high_priority": False
+        "priority": "Medium"
     }

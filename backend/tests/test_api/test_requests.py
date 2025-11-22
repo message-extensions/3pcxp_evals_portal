@@ -114,8 +114,26 @@ def test_complete_evaluation(authenticated_client, sample_request_data):
     assert "completed_at" in data
 
 
-def test_delete_request(authenticated_client, sample_request_data):
-    """Test deleting a request."""
+def test_delete_request(admin_client, sample_request_data):
+    """Test deleting a request (admin only)."""
+    # Create request (as admin)
+    create_response = admin_client.post(
+        "/api/requests",
+        json=sample_request_data
+    )
+    request_id = create_response.json()["id"]
+    
+    # Delete request (requires admin)
+    response = admin_client.delete(f"/api/requests/{request_id}")
+    assert response.status_code == 204
+    
+    # Verify deletion
+    get_response = admin_client.get(f"/api/requests/{request_id}")
+    assert get_response.status_code == 404
+
+
+def test_delete_request_non_admin(authenticated_client, sample_request_data):
+    """Test that non-admin users cannot delete requests."""
     # Create request
     create_response = authenticated_client.post(
         "/api/requests",
@@ -123,10 +141,7 @@ def test_delete_request(authenticated_client, sample_request_data):
     )
     request_id = create_response.json()["id"]
     
-    # Delete request
+    # Try to delete as non-admin (should fail)
     response = authenticated_client.delete(f"/api/requests/{request_id}")
-    assert response.status_code == 204
-    
-    # Verify deletion
-    get_response = authenticated_client.get(f"/api/requests/{request_id}")
-    assert get_response.status_code == 404
+    assert response.status_code == 403
+    assert "Admin privileges required" in response.json()["detail"]
