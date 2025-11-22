@@ -35,8 +35,20 @@ app.include_router(health.router)
 app.include_router(config.router)
 
 # Mount frontend static files
-frontend_dir = Path(__file__).parent.parent.parent / "frontend"
-if frontend_dir.exists():
+# Try multiple possible locations for the frontend directory
+possible_frontend_paths = [
+    Path(__file__).parent.parent.parent / "frontend",  # Local development
+    Path(__file__).parent.parent / "frontend",          # Deployment package (app/ and frontend/ at same level)
+    Path("/home/site/wwwroot/frontend"),                 # Azure App Service absolute path
+]
+
+frontend_dir = None
+for path in possible_frontend_paths:
+    if path.exists():
+        frontend_dir = path
+        break
+
+if frontend_dir and frontend_dir.exists():
     # Mount assets only if directory exists
     assets_dir = frontend_dir / "assets"
     if assets_dir.exists():
@@ -51,9 +63,9 @@ if frontend_dir.exists():
         """Serve frontend index.html."""
         return FileResponse(str(frontend_dir / "index.html"))
     
-    logger.info("Frontend static files mounted")
+    logger.info(f"Frontend static files mounted from: {frontend_dir}")
 else:
-    logger.warning(f"Frontend directory not found: {frontend_dir}")
+    logger.warning(f"Frontend directory not found. Tried: {[str(p) for p in possible_frontend_paths]}")
 
 
 @app.on_event("startup")
