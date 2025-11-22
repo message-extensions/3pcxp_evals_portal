@@ -193,7 +193,11 @@ jobs:
               "slotSetting": false
             }
           ]
-        startup-command: "gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000"
+        general-settings-json: |
+          {
+            "linuxFxVersion": "PYTHON|3.11",
+            "appCommandLine": "gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000"
+          }
     
     - name: Health Check
       run: |
