@@ -35,6 +35,8 @@ email-validator==2.1.0
     # via 3pcxp-evals-portal (pyproject.toml)
 fastapi==0.104.1
     # via 3pcxp-evals-portal (pyproject.toml)
+gunicorn==23.0.0
+    # via 3pcxp-evals-portal (pyproject.toml)
 h11==0.16.0
     # via uvicorn
 httptools==0.7.1
@@ -46,6 +48,8 @@ idna==3.11
     #   requests
 msal==1.25.0
     # via 3pcxp-evals-portal (pyproject.toml)
+packaging==25.0
+    # via gunicorn
 pyasn1==0.6.1
     # via
     #   python-jose
