@@ -23,6 +23,7 @@ htmlcov/
 # Data
 backend/data/requests/*.json
 backend/data/backups/
+backend/data/sessions/
 backend/data/index.json
 
 # Keep structure

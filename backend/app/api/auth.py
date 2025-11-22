@@ -17,7 +17,7 @@ async def login(request: Request, response: Response):
     session_id = secrets.token_urlsafe(32)
     
     # Get authorization URL from MSAL
-    auth_url = auth_service.get_auth_url(session_id)
+    auth_url = await auth_service.get_auth_url(session_id)
     
     # Set session cookie
     response = RedirectResponse(auth_url)
@@ -52,7 +52,7 @@ async def callback(code: str, state: str, request: Request):
         user = await auth_service.handle_callback(code, state)
         
         # Create session
-        auth_service.create_session(session_id, user)
+        await auth_service.create_session(session_id, user)
         
         # Redirect to frontend
         logger.info(f"User {user.name} logged in successfully")
@@ -70,7 +70,7 @@ async def callback(code: str, state: str, request: Request):
 async def get_current_user(request: Request):
     """Get current authenticated user."""
     session_id = request.cookies.get("session_id")
-    user = auth_service.get_current_user(session_id)
+    user = await auth_service.get_current_user(session_id)
     
     if not user:
         raise HTTPException(
@@ -87,7 +87,7 @@ async def logout(request: Request, response: Response):
     session_id = request.cookies.get("session_id")
     
     if session_id:
-        auth_service.delete_session(session_id)
+        await auth_service.delete_session(session_id)
     
     # Clear session cookie
     response.delete_cookie("session_id")

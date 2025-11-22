@@ -104,6 +104,7 @@ jobs:
         # Create data directories
         mkdir -p deploy/data/requests
         mkdir -p deploy/data/backups
+        mkdir -p deploy/data/sessions
         
         # Create startup script for Azure
         cat > deploy/startup.sh << 'EOF'

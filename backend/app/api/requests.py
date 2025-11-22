@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/requests", tags=["requests"])
 async def get_current_user(request: Request) -> User:
     """Dependency to get current authenticated user."""
     session_id = request.cookies.get("session_id")
-    user = auth_service.get_current_user(session_id)
+    user = await auth_service.get_current_user(session_id)
     
     if not user:
         raise HTTPException(

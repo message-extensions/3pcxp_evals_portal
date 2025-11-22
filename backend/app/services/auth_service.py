@@ -1,10 +1,11 @@
 """Authentication service with Microsoft Entra OAuth 2.0."""
 import secrets
-from typing import Optional, Dict
+from typing import Optional
 from datetime import datetime, timedelta, timezone
 from msal import ConfidentialClientApplication
 from app.models.user import User, Session
 from app.config import settings
+from app.storage.session_storage import SessionStorage
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -25,18 +26,17 @@ class AuthService:
                 authority=settings.azure_authority
             )
         
-        # In-memory session store (replace with Redis in production)
-        self.sessions: Dict[str, Session] = {}
-        self.code_verifiers: Dict[str, str] = {}
+        # File-based session storage (works across multiple workers)
+        self.storage = SessionStorage()
     
-    def get_auth_url(self, session_id: str) -> str:
+    async def get_auth_url(self, session_id: str) -> str:
         """Generate Microsoft login URL with PKCE."""
         if settings.is_testing:
             return "http://test-auth-url.com"
         
         # Generate code verifier for PKCE
         code_verifier = secrets.token_urlsafe(32)
-        self.code_verifiers[session_id] = code_verifier
+        await self.storage.store_verifier(session_id, code_verifier)
         
         # Get authorization URL
         auth_url = self.msal_app.get_authorization_request_url(
@@ -60,7 +60,7 @@ class AuthService:
             )
         
         # Get code verifier for this session
-        code_verifier = self.code_verifiers.get(state)
+        code_verifier = await self.storage.get_verifier(state)
         if not code_verifier:
             raise ValueError("Invalid state parameter - code verifier not found")
         
@@ -72,7 +72,7 @@ class AuthService:
         )
         
         # Clean up code verifier
-        self.code_verifiers.pop(state, None)
+        await self.storage.delete_verifier(state)
         
         if "error" in result:
             error_msg = result.get("error_description", result["error"])
@@ -96,7 +96,7 @@ class AuthService:
         logger.info(f"User authenticated: {user.name} ({user.email}) [Admin: {is_admin}]")
         return user
     
-    def create_session(self, session_id: str, user: User) -> Session:
+    async def create_session(self, session_id: str, user: User) -> Session:
         """Create a new session for authenticated user."""
         expires_at = datetime.now(timezone.utc) + timedelta(hours=settings.session_lifetime_hours)
         session = Session(
@@ -106,37 +106,24 @@ class AuthService:
             expires_at=expires_at
         )
         
-        self.sessions[session_id] = session
+        await self.storage.store_session(session_id, session)
         logger.info(f"Created session for user {user.name}")
         return session
     
-    def get_session(self, session_id: str) -> Optional[Session]:
+    async def get_session(self, session_id: str) -> Optional[Session]:
         """Retrieve session by ID."""
-        session = self.sessions.get(session_id)
-        
-        if not session:
-            return None
-        
-        # Check if session expired
-        if datetime.now(timezone.utc) > session.expires_at:
-            self.delete_session(session_id)
-            return None
-        
-        return session
+        return await self.storage.get_session(session_id)
     
-    def delete_session(self, session_id: str) -> None:
+    async def delete_session(self, session_id: str) -> None:
         """Delete session (logout)."""
-        if session_id in self.sessions:
-            user_name = self.sessions[session_id].user.name
-            self.sessions.pop(session_id)
-            logger.info(f"Deleted session for user {user_name}")
+        await self.storage.delete_session(session_id)
     
-    def get_current_user(self, session_id: Optional[str]) -> Optional[User]:
+    async def get_current_user(self, session_id: Optional[str]) -> Optional[User]:
         """Get current user from session ID."""
         if not session_id:
             return None
         
-        session = self.get_session(session_id)
+        session = await self.get_session(session_id)
         return session.user if session else None
 
 
