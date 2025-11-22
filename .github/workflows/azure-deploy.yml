@@ -8,6 +8,11 @@ on:
 
 env:
   PYTHON_VERSION: '3.11'
+  # Test environment variables (dummy values for CI)
+  AZURE_CLIENT_ID: test-client-id
+  AZURE_CLIENT_SECRET: test-client-secret
+  AZURE_TENANT_ID: test-tenant-id
+  SECRET_KEY: test-secret-key-for-ci-only-not-secure
 
 jobs:
   build-and-test:
@@ -37,6 +42,12 @@ jobs:
     
     - name: Run tests
       working-directory: ./backend
+      env:
+        # Override with test values
+        AZURE_CLIENT_ID: ${{ env.AZURE_CLIENT_ID }}
+        AZURE_CLIENT_SECRET: ${{ env.AZURE_CLIENT_SECRET }}
+        AZURE_TENANT_ID: ${{ env.AZURE_TENANT_ID }}
+        SECRET_KEY: ${{ env.SECRET_KEY }}
       run: |
         source .venv/bin/activate
         pytest --cov=app --cov-report=xml --cov-report=term
