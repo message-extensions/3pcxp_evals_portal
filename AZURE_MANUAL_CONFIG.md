@@ -72,7 +72,61 @@ Add this to ensure dependencies are installed:
 
 Click **Save** after adding all settings.
 
-## 3. Verify Configuration
+## 3. Persist Request Data with Azure File Share (Recommended)
+
+Without extra configuration, every deployment wipes the `data/` folder (Azure App Service replaces `/home/site/wwwroot`). Mount an **Azure File Share** so request/backups/session files survive redeployments.
+
+### 3.1 Create Storage Account + File Share (one-time)
+
+Use the Azure Portal or CLI (replace placeholders):
+
+```powershell
+# Create storage account (pick your own unique name and region)
+az storage account create \
+   --name <storage-account-name> \
+   --resource-group <resource-group> \
+   --location <region> \
+   --sku Standard_LRS
+
+# Create file share inside that storage account
+az storage share create \
+   --name evals-data \
+   --account-name <storage-account-name>
+```
+
+### 3.2 Mount File Share to App Service
+
+1. App Service → **Settings** → **Configuration** → **Path mappings**
+2. Click **+ New Azure Storage Mount**
+3. Fill in:
+    - **Name:** `data-mount`
+    - **Configuration options:** Basic
+    - **Storage account:** select the one you just made
+    - **Storage type:** Azure Files
+    - **Share name:** `evals-data`
+    - **Mount path:** `/home/data`
+4. Save (App Service will restart)
+
+### 3.3 Point the App to Mounted Storage
+
+1. Still in **Configuration** → **Application settings**
+2. Add/update: `DATA_DIR=/home/data`
+3. Save and restart again
+
+The JSON storage layer now reads/writes everything under `/home/data` (your mounted share), so deployments no longer wipe data.
+
+### 3.4 Verify Persistence
+
+1. Submit a test request in production
+2. In Azure Portal → Storage account → **File shares** → `evals-data`
+3. Confirm folders/files: `requests/`, `backups/`, `sessions/`, `index.json`
+4. Trigger another deployment – the request stays ✅
+
+> 💡 Tip: Use [Azure Storage Explorer](https://azure.microsoft.com/features/storage-explorer/) or `az storage file download` to pull backups locally.
+
+---
+
+## 4. Verify Configuration
 
 After saving, the App Service will restart. Check:
 
@@ -80,7 +134,7 @@ After saving, the App Service will restart. Check:
 2. **API docs**: `https://<app-name>.azurewebsites.net/docs`
 3. **Frontend**: `https://<app-name>.azurewebsites.net/`
 
-## 4. View Application Logs
+## 5. View Application Logs
 
 To troubleshoot startup issues:
 
@@ -88,7 +142,7 @@ To troubleshoot startup issues:
 2. Or use **Diagnose and solve problems**
 3. Or SSH into the container: **Development Tools** → **SSH**
 
-## Common Issues
+## 6. Common Issues
 
 ### Issue: "ModuleNotFoundError"
 **Solution**: Ensure `SCM_DO_BUILD_DURING_DEPLOYMENT=true` is set, then redeploy.

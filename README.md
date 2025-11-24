@@ -139,6 +139,16 @@ SECRET_KEY=<run: python -c "import secrets; print(secrets.token_urlsafe(32))">
 ADMIN_USERS=tezansahu@microsoft.com,sivinnak@microsoft.com
 ```
 
+### Production Data Persistence (Azure File Share)
+
+Azure App Service replaces everything in `/home/site/wwwroot` on each deployment. To keep evaluation requests, backups, and sessions between releases:
+
+1. **Create Azure Storage Account + File Share** (e.g., `evals-data`)
+2. **Mount the share** in App Service → Configuration → Path mappings (mount path `/home/data`)
+3. **Set `DATA_DIR=/home/data`** in App settings so the JSON storage layer writes to the mounted share
+
+Full walkthrough: [Azure Manual Configuration → Persist Request Data](AZURE_MANUAL_CONFIG.md#3-persist-request-data-with-azure-file-share-recommended)
+
 ## Project Structure
 
 ```
