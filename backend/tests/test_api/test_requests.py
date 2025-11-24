@@ -145,3 +145,69 @@ def test_delete_request_non_admin(authenticated_client, sample_request_data):
     response = authenticated_client.delete(f"/api/requests/{request_id}")
     assert response.status_code == 403
     assert "Admin privileges required" in response.json()["detail"]
+
+
+def test_add_run_links_to_completed_evaluation(authenticated_client, sample_request_data):
+    """Test that run links can be added to completed evaluations (added Nov 2025)."""
+    # Create and complete a request
+    create_response = authenticated_client.post(
+        "/api/requests",
+        json=sample_request_data
+    )
+    request_id = create_response.json()["id"]
+    
+    # Start and complete
+    start_data = {"run_links": [{"url": "https://example.com/run1"}]}
+    authenticated_client.post(f"/api/requests/{request_id}/start", json=start_data)
+    authenticated_client.post(f"/api/requests/{request_id}/complete")
+    
+    # Add run links to completed evaluation (new feature)
+    add_links_data = {
+        "run_links": [{"url": "https://example.com/additional-run"}],
+        "update_notes": "Adding post-analysis results"
+    }
+    response = authenticated_client.post(
+        f"/api/requests/{request_id}/links",
+        json=add_links_data
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "completed"  # Status should remain completed
+    assert len(data["run_links"]) == 2  # Original + new link
+
+
+def test_create_request_with_on_behalf_of(authenticated_client, sample_request_data):
+    """Test creating request with on_behalf_of field (added Nov 2025)."""
+    sample_request_data["on_behalf_of"] = "John Smith"
+    
+    response = authenticated_client.post(
+        "/api/requests",
+        json=sample_request_data
+    )
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data["on_behalf_of"] == "John Smith"
+
+
+def test_create_request_with_oai_apps_sdk(authenticated_client):
+    """Test creating request with OAI Apps SDK agent type (added Nov 2025)."""
+    request_data = {
+        "purpose": "Flight review",
+        "agent_type": "OAI Apps SDK",
+        "agents": ["Custom Agent 1", "Custom Agent 2"],
+        "query_set": "Default",
+        "control_config": "Current Prod",
+        "treatment_config": "Current Prod"
+    }
+    
+    response = authenticated_client.post(
+        "/api/requests",
+        json=request_data
+    )
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data["agent_type"] == "OAI Apps SDK"
+    assert data["agents"] == ["Custom Agent 1", "Custom Agent 2"]

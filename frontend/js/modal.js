@@ -149,6 +149,15 @@ const modalHandler = {
       this.addRunLinkInput('updateLinksContainer');
     });
 
+    // Character counter for updateNotes
+    const updateNotes = document.getElementById('updateNotes');
+    const updateNotesCounter = document.getElementById('updateNotesCounter');
+    if (updateNotes && updateNotesCounter) {
+      updateNotes.addEventListener('input', () => {
+        updateNotesCounter.textContent = updateNotes.value.length;
+      });
+    }
+
     // Form submission
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -198,12 +207,19 @@ const modalHandler = {
         <textarea class="run-link-notes" rows="2" placeholder="Notes (optional)"></textarea>
       </div>
     `;
+    
+    // Reset character counter
+    const updateNotesCounter = document.getElementById('updateNotesCounter');
+    if (updateNotesCounter) {
+      updateNotesCounter.textContent = '0';
+    }
 
     modal.showModal();
   },
 
   async handleUpdateSubmit() {
     const newLinks = this.collectRunLinks('updateLinksContainer', false); // not required
+    const updateNotes = document.getElementById('updateNotes').value.trim();
 
     if (newLinks.length === 0) {
       showToast('No new links to add', 'error');
@@ -219,8 +235,8 @@ const modalHandler = {
     }
 
     try {
-      // Update state (calls API)
-      await state.addRunLinks(this.currentRequestId, newLinks);
+      // Update state (calls API with update_notes)
+      await state.addRunLinks(this.currentRequestId, newLinks, updateNotes || null);
       
       document.getElementById('updateModal').close();
       dashboard.render();
@@ -408,6 +424,15 @@ const modalHandler = {
           <div class="preview-label">Submitter:</div>
           <div class="preview-value">${escapeHtml(request.submitter)}</div>
         </div>
+
+        ${request.on_behalf_of ? `
+          <div class="preview-row">
+            <div class="preview-label">On Behalf Of:</div>
+            <div class="preview-value">
+              <span class="obo-indicator">${escapeHtml(request.on_behalf_of)}</span>
+            </div>
+          </div>
+        ` : ''}
 
         <div class="preview-row">
           <div class="preview-label">Submitted At:</div>

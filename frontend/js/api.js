@@ -87,10 +87,14 @@ class APIClient {
     });
   }
 
-  async addRunLinks(id, runLinks) {
+  async addRunLinks(id, runLinks, updateNotes = null) {
+    const payload = { run_links: runLinks };
+    if (updateNotes) {
+      payload.update_notes = updateNotes;
+    }
     return this.request(`/requests/${id}/links`, {
       method: 'POST',
-      body: JSON.stringify({ run_links: runLinks })
+      body: JSON.stringify(payload)
     });
   }
 

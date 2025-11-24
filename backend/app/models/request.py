@@ -44,8 +44,8 @@ class RequestBase(BaseModel):
     purpose_reason: Optional[str] = Field(
         None, max_length=500, description="Required reason if purpose is Ad-hoc"
     )
-    agent_type: Literal["DA", "FCC"] = Field(
-        ..., description="Type of agent: Declarative Agent or Federated Copilot Connector"
+    agent_type: Literal["DA", "FCC", "OAI Apps SDK"] = Field(
+        ..., description="Type of agent: Declarative Agent, Federated Copilot Connector, or OAI Apps SDK"
     )
     agents: List[str] = Field(
         ..., min_length=1, description="List of selected agents"
@@ -58,6 +58,7 @@ class RequestBase(BaseModel):
     treatment_config: str = Field(..., description="Treatment configuration")
     notes: Optional[str] = Field(None, max_length=2000, description="Additional notes")
     priority: Priority = Field(Priority.MEDIUM, description="Priority level (Low, Medium, High)")
+    on_behalf_of: Optional[str] = Field(None, max_length=200, description="Name of person this request is submitted on behalf of")
     
     @field_validator('purpose_reason')
     @classmethod
@@ -85,7 +86,7 @@ class RequestUpdate(BaseModel):
     """Model for updating an existing request."""
     purpose: Optional[Literal["RAI check", "Flight review", "GPT-5 migration", "Ad-hoc"]] = None
     purpose_reason: Optional[str] = Field(None, max_length=500)
-    agent_type: Optional[Literal["DA", "FCC"]] = None
+    agent_type: Optional[Literal["DA", "FCC", "OAI Apps SDK"]] = None
     agents: Optional[List[str]] = Field(None, min_length=1)
     query_set: Optional[str] = None
     query_set_details: Optional[str] = Field(None, max_length=500)
@@ -93,6 +94,7 @@ class RequestUpdate(BaseModel):
     treatment_config: Optional[str] = None
     notes: Optional[str] = Field(None, max_length=2000)
     priority: Optional[Priority] = None
+    on_behalf_of: Optional[str] = Field(None, max_length=200)
 
 
 class Request(RequestBase):
@@ -139,5 +141,6 @@ class StartEvaluation(BaseModel):
 
 
 class AddRunLinks(BaseModel):
-    """Model for adding run links to an in-progress evaluation."""
+    """Model for adding run links to an in-progress or completed evaluation."""
     run_links: List[RunLink] = Field(..., min_length=1, max_length=10)
+    update_notes: Optional[str] = Field(None, max_length=1000, description="Notes about this update")

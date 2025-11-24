@@ -53,6 +53,11 @@ const formHandler = {
     purposeSelect.innerHTML = '<option value="">Select purpose...</option>' +
       state.config.purposes.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
 
+    // Populate agent types
+    const agentTypeSelect = document.getElementById('agentType');
+    agentTypeSelect.innerHTML = '<option value="">Select agent type...</option>' +
+      state.config.agent_types.map(at => `<option value="${escapeHtml(at.value)}">${escapeHtml(at.label)}</option>`).join('');
+
     // Populate query sets
     const querySetSelect = document.getElementById('querySet');
     querySetSelect.innerHTML = state.config.query_sets.map(q => 
@@ -92,6 +97,22 @@ const formHandler = {
         purposeReasonGroup.classList.add('hidden');
         purposeReasonField.required = false;
         purposeReasonField.value = '';
+      }
+    });
+
+    // On Behalf Of Toggle
+    const onBehalfOfToggle = document.getElementById('onBehalfOfToggle');
+    const onBehalfOfGroup = document.getElementById('onBehalfOfGroup');
+    const onBehalfOfField = document.getElementById('onBehalfOf');
+
+    onBehalfOfToggle.addEventListener('change', () => {
+      if (onBehalfOfToggle.checked) {
+        onBehalfOfGroup.classList.remove('hidden');
+        onBehalfOfGroup.style.display = '';
+      } else {
+        onBehalfOfGroup.classList.add('hidden');
+        onBehalfOfGroup.style.display = 'none';
+        onBehalfOfField.value = '';
       }
     });
 
@@ -219,6 +240,37 @@ const formHandler = {
 
       html += '</div>';
       container.innerHTML = html;
+    } else if (agentType === 'OAI Apps SDK') {
+      // Only "Others" option for OAI Apps SDK
+      let html = '<div class="oai-agents">';
+      html += `
+        <label class="agent-checkbox">
+          <input type="checkbox" value="Others" id="oaiOthersCheckbox" checked>
+          <span><strong>Others (specify custom agents)</strong></span>
+        </label>
+      `;
+      html += '</div>';
+      container.innerHTML = html;
+      
+      // Auto-select "Others" for OAI Apps SDK
+      this.selectedAgents.add('Others');
+      this.updateSelectedChips();
+      this.toggleCustomAgentsField();
+      
+      // Add event listener
+      const checkbox = container.querySelector('input[type="checkbox"]');
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+          this.selectedAgents.add(checkbox.value);
+        } else {
+          this.selectedAgents.delete(checkbox.value);
+        }
+        this.updateSelectedChips();
+        this.toggleCustomAgentsField();
+      });
+      
+      // Return early
+      return;
     }
 
     // Add event listeners to checkboxes
@@ -327,7 +379,8 @@ const formHandler = {
       control_config: this.getConfigValue('control'),
       treatment_config: this.getConfigValue('treatment'),
       notes: document.getElementById('notes').value || null,
-      priority: document.getElementById('priority').value
+      priority: document.getElementById('priority').value,
+      on_behalf_of: document.getElementById('onBehalfOf').value.trim() || null
     };
 
     // Add to state (submitter auto-populated by backend)
@@ -373,6 +426,7 @@ const formHandler = {
     document.getElementById('controlConfigCustom').classList.add('hidden');
     document.getElementById('treatmentConfigCustom').classList.add('hidden');
     document.getElementById('customAgentsGroup').classList.add('hidden');
+    document.getElementById('onBehalfOfGroup').classList.add('hidden');
     
     // Reset agent selection
     document.getElementById('agentSelection').innerHTML = '<div class="placeholder-text">Select agent type first...</div>';

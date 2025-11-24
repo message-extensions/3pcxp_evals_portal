@@ -346,6 +346,20 @@
   font-weight: 500;
 }
 
+/* On Behalf Of Indicator */
+.obo-indicator {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background-color: #F3F2F1;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  font-size: var(--font-size-small);
+  font-weight: 400;
+  border: 1px solid #EDEBE9;
+  font-style: italic;
+}
+
 /* Request Preview in Modals */
 .request-preview {
   background-color: var(--bg-secondary);

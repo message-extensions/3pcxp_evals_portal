@@ -43,6 +43,7 @@ class RequestService:
             treatment_config=request_data.treatment_config,
             notes=request_data.notes,
             priority=request_data.priority,
+            on_behalf_of=request_data.on_behalf_of,
             submitter=submitter.name,
             submitted_at=datetime.now(timezone.utc),
             status="pending",
@@ -142,14 +143,14 @@ class RequestService:
         links_data: AddRunLinks,
         user: User
     ) -> Optional[Request]:
-        """Add run links to in-progress evaluation."""
+        """Add run links to in-progress or completed evaluation."""
         # Get existing request
         request = await self.storage.get_request(request_id)
         if not request:
             return None
         
-        # Validate status
-        if request.status != "in_progress":
+        # Validate status - allow both in_progress and completed
+        if request.status not in ["in_progress", "completed"]:
             raise ValueError(f"Cannot add links to request with status '{request.status}'")
         
         # Update added_at timestamp for new links

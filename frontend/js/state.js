@@ -121,9 +121,9 @@ const state = {
   },
 
   // Add run links to in-progress evaluation
-  async addRunLinks(id, newLinks) {
+  async addRunLinks(id, newLinks, updateNotes = null) {
     try {
-      const request = await api.addRunLinks(id, newLinks);
+      const request = await api.addRunLinks(id, newLinks, updateNotes);
       const index = this.requests.findIndex(r => r.id === id);
       if (index !== -1) {
         this.requests[index] = request;

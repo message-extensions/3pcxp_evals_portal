@@ -15,7 +15,8 @@ CONFIG_DATA = {
     ],
     "agent_types": [
         {"value": "DA", "label": "Declarative Agent"},
-        {"value": "FCC", "label": "Federated Copilot Connector"}
+        {"value": "FCC", "label": "Federated Copilot Connector"},
+        {"value": "OAI Apps SDK", "label": "OAI Apps SDK"}
     ],
     "agent_hierarchy": {
         "DA": {
@@ -24,7 +25,8 @@ CONFIG_DATA = {
             "Remote MCP": ["Monday.com", "Connect", "Sales UAT"],
             "Instructions++": ["Hugo", "Vantage Rewards", "Sales Genie", "IT Helpdesk", "Adobe Express"]
         },
-        "FCC": ["Notion", "Canva", "HubSpot", "Linear", "Google Calendar", "Google Contacts", "Intercom"]
+        "FCC": ["Notion", "Canva", "HubSpot", "Linear", "Google Calendar", "Google Contacts", "Intercom"],
+        "OAI Apps SDK": ["Others"]
     },
     "query_sets": [
         "Default",

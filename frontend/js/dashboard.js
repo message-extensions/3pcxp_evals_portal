@@ -89,7 +89,10 @@ const dashboard = {
           ${escapeHtml(request.purpose)}
         </span>
       </td>
-      <td>${escapeHtml(request.submitter)}</td>
+      <td>
+        ${escapeHtml(request.submitter)}
+        ${request.on_behalf_of ? `<span class="obo-indicator" title="Submitted on behalf of ${escapeHtml(request.on_behalf_of)}">(OBO: ${escapeHtml(request.on_behalf_of)})</span>` : ''}
+      </td>
     `;
 
     const isAdmin = state.currentUser && state.currentUser.is_admin;
@@ -203,6 +206,9 @@ const dashboard = {
           </td>
           <td>
             <div class="table-actions">
+              <button class="btn-secondary btn-action" data-action="update" data-id="${request.id}">
+                Update
+              </button>
               <button class="btn-secondary btn-action" data-action="view" data-id="${request.id}">
                 View Details
               </button>

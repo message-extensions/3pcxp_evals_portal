@@ -155,7 +155,7 @@ async def add_run_links(
     links_data: AddRunLinks,
     current_user: User = Depends(get_current_user)
 ):
-    """Add run links to in-progress evaluation."""
+    """Add run links to in-progress or completed evaluation."""
     try:
         request = await request_service.add_run_links(request_id, links_data, current_user)
         
