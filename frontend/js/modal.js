@@ -221,12 +221,13 @@ const modalHandler = {
     const newLinks = this.collectRunLinks('updateLinksContainer', false); // not required
     const updateNotes = document.getElementById('updateNotes').value.trim();
 
-    if (newLinks.length === 0) {
-      showToast('No new links to add', 'error');
+    // Allow submission with only notes OR only links OR both
+    if (newLinks.length === 0 && !updateNotes) {
+      showToast('Please provide either update notes or run links', 'error');
       return;
     }
 
-    // Validate URLs
+    // Validate URLs if any links provided
     for (const link of newLinks) {
       if (link.url && !isValidUrl(link.url)) {
         showToast('Please enter valid URLs', 'error');
@@ -491,6 +492,29 @@ const modalHandler = {
               `).join('') : '<span class="text-secondary">No run links</span>'}
             </div>
           </div>
+        </div>
+      ` : ''}
+
+      ${request.update_history && request.update_history.length > 0 ? `
+        <div class="details-section">
+          <h4>Update History</h4>
+          ${request.update_history.map((update, index) => `
+            <div class="update-entry" style="padding: 12px; background: #F3F2F1; border-radius: 4px; margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <strong style="color: var(--text-primary);">Update #${index + 1}</strong>
+                <span class="text-secondary" style="font-size: var(--font-size-small);">
+                  ${formatAbsoluteDate(update.updated_at)} (${getRelativeTime(update.updated_at)})
+                </span>
+              </div>
+              <div style="margin-bottom: 4px;">
+                <strong>By:</strong> ${escapeHtml(update.updated_by)}
+                ${update.links_added > 0 ? `<span class="text-secondary"> • Added ${update.links_added} link${update.links_added > 1 ? 's' : ''}</span>` : ''}
+              </div>
+              <div style="background: white; padding: 8px; border-radius: 4px; margin-top: 8px;">
+                <strong>Notes:</strong> ${escapeHtml(update.notes)}
+              </div>
+            </div>
+          `).join('')}
         </div>
       ` : ''}
     `;

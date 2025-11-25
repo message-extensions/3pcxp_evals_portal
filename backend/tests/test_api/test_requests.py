@@ -211,3 +211,102 @@ def test_create_request_with_oai_apps_sdk(authenticated_client):
     data = response.json()
     assert data["agent_type"] == "OAI Apps SDK"
     assert data["agents"] == ["Custom Agent 1", "Custom Agent 2"]
+
+
+def test_update_with_only_notes(authenticated_client, sample_request_data):
+    """Test that updates can be submitted with only notes (no links required)."""
+    # Create and start a request
+    create_response = authenticated_client.post(
+        "/api/requests",
+        json=sample_request_data
+    )
+    request_id = create_response.json()["id"]
+    
+    # Start evaluation
+    start_data = {"run_links": [{"url": "https://example.com/run1"}]}
+    authenticated_client.post(f"/api/requests/{request_id}/start", json=start_data)
+    
+    # Update with only notes (no run_links)
+    update_data = {
+        "run_links": [],
+        "update_notes": "Updated analysis parameters based on new requirements"
+    }
+    response = authenticated_client.post(
+        f"/api/requests/{request_id}/links",
+        json=update_data
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "in_progress"
+    assert len(data["run_links"]) == 1  # Still has original link, no new links added
+    
+    # Verify update history was created
+    assert "update_history" in data
+    assert len(data["update_history"]) == 1
+    assert data["update_history"][0]["notes"] == "Updated analysis parameters based on new requirements"
+    assert data["update_history"][0]["updated_by"] == "Test User"
+    assert data["update_history"][0]["links_added"] == 0
+
+
+def test_update_requires_notes_or_links(authenticated_client, sample_request_data):
+    """Test that updates require at least notes or links (not both empty)."""
+    # Create and start a request
+    create_response = authenticated_client.post(
+        "/api/requests",
+        json=sample_request_data
+    )
+    request_id = create_response.json()["id"]
+    
+    # Start evaluation
+    start_data = {"run_links": [{"url": "https://example.com/run1"}]}
+    authenticated_client.post(f"/api/requests/{request_id}/start", json=start_data)
+    
+    # Try to update with neither notes nor links (should fail)
+    update_data = {
+        "run_links": [],
+        "update_notes": ""
+    }
+    response = authenticated_client.post(
+        f"/api/requests/{request_id}/links",
+        json=update_data
+    )
+    
+    assert response.status_code == 422  # Validation error
+
+
+def test_update_with_notes_and_links(authenticated_client, sample_request_data):
+    """Test that updates work correctly with both notes and links."""
+    # Create and start a request
+    create_response = authenticated_client.post(
+        "/api/requests",
+        json=sample_request_data
+    )
+    request_id = create_response.json()["id"]
+    
+    # Start evaluation
+    start_data = {"run_links": [{"url": "https://example.com/run1"}]}
+    authenticated_client.post(f"/api/requests/{request_id}/start", json=start_data)
+    
+    # Update with both notes and links
+    update_data = {
+        "run_links": [
+            {"url": "https://example.com/run2", "notes": "Second iteration"},
+            {"url": "https://example.com/run3"}
+        ],
+        "update_notes": "Added two more test runs with updated configuration"
+    }
+    response = authenticated_client.post(
+        f"/api/requests/{request_id}/links",
+        json=update_data
+    )
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["run_links"]) == 3  # Original + 2 new links
+    
+    # Verify update history
+    assert len(data["update_history"]) == 1
+    assert data["update_history"][0]["notes"] == "Added two more test runs with updated configuration"
+    assert data["update_history"][0]["links_added"] == 2
+    assert data["update_history"][0]["updated_by"] == "Test User"

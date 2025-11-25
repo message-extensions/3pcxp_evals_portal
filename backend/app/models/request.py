@@ -12,6 +12,24 @@ class Priority(str, Enum):
     HIGH = "High"
 
 
+class UpdateEntry(BaseModel):
+    """Model for an update history entry."""
+    notes: str = Field(..., max_length=1000, description="Update notes")
+    updated_by: str = Field(..., description="Person who made the update")
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="When this update was made")
+    links_added: int = Field(0, description="Number of links added in this update")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "notes": "Updated based on new requirements",
+                "updated_by": "John Doe",
+                "updated_at": "2025-11-24T15:30:00Z",
+                "links_added": 2
+            }
+        }
+
+
 class RunLink(BaseModel):
     """Model for a run link with optional notes."""
     url: str = Field(..., description="URL to the evaluation run")
@@ -109,6 +127,7 @@ class Request(RequestBase):
     started_at: Optional[datetime] = Field(None, description="When execution started")
     completed_at: Optional[datetime] = Field(None, description="When execution completed")
     run_links: List[RunLink] = Field(default_factory=list, description="List of run links")
+    update_history: List[UpdateEntry] = Field(default_factory=list, description="History of updates made to this request")
     
     class Config:
         json_schema_extra = {
@@ -142,5 +161,14 @@ class StartEvaluation(BaseModel):
 
 class AddRunLinks(BaseModel):
     """Model for adding run links to an in-progress or completed evaluation."""
-    run_links: List[RunLink] = Field(..., min_length=1, max_length=10)
+    run_links: List[RunLink] = Field(default_factory=list, max_length=10, description="Run links to add (optional if update_notes provided)")
     update_notes: Optional[str] = Field(None, max_length=1000, description="Notes about this update")
+    
+    @field_validator('update_notes')
+    @classmethod
+    def validate_at_least_one_field(cls, v, info):
+        """Validate that either run_links or update_notes is provided."""
+        run_links = info.data.get('run_links', [])
+        if not run_links and not v:
+            raise ValueError('Either run_links or update_notes must be provided')
+        return v

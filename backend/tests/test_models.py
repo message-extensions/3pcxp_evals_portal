@@ -37,6 +37,8 @@ class TestRequestModelValidation:
         assert request.on_behalf_of is None
         assert request.agent_type == "DA"
         assert request.submitter == "Test User"
+        # New field should default to empty list
+        assert request.update_history == []
     
     def test_request_with_run_links(self):
         """Test that run_links load correctly with all fields."""

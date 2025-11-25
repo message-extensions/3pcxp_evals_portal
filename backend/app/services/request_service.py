@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import secrets
 from app.models.request import (
     Request, RequestCreate, RequestUpdate, 
-    StartEvaluation, AddRunLinks, RunLink, Priority
+    StartEvaluation, AddRunLinks, RunLink, Priority, UpdateEntry
 )
 from app.models.user import User
 from app.storage.json_storage import JSONStorage
@@ -165,8 +165,22 @@ class RequestService:
         if len(updated_links) > 10:
             raise ValueError("Maximum 10 run links allowed per evaluation")
         
+        # Create update history entry if notes provided
+        update_history = list(request.update_history) if hasattr(request, 'update_history') else []
+        if links_data.update_notes:
+            update_entry = UpdateEntry(
+                notes=links_data.update_notes,
+                updated_by=user.name,
+                updated_at=datetime.now(timezone.utc),
+                links_added=len(new_links)
+            )
+            update_history.append(update_entry)
+        
         # Update request
-        updated_request = request.model_copy(update={"run_links": updated_links})
+        updated_request = request.model_copy(update={
+            "run_links": updated_links,
+            "update_history": update_history
+        })
         
         # Save updated request
         await self.storage.save_request(updated_request)
